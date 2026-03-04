@@ -1,0 +1,50 @@
+import { Request, Response } from 'express';
+import ApiResponse from '../utils/ApiResponse.js';
+
+class {{ControllerName}} {
+  
+  /**
+   * Display a listing of the resource.
+   */
+  public async index(req: Request, res: Response) {
+    // const items = await Model.findAll();
+    return ApiResponse.success(res, []);
+  }
+
+  /**
+   * Store a newly created resource in storage.
+   */
+  public async store(req: Request, res: Response) {
+    // const item = await Model.create(req.body);
+    return ApiResponse.success(res, {}, 'Resource created successfully');
+  }
+
+  /**
+   * Display the specified resource.
+   */
+  public async show(req: Request, res: Response) {
+    const { id } = req.params;
+    // const item = await Model.findByPk(id);
+    return ApiResponse.success(res, { id });
+  }
+
+  /**
+   * Update the specified resource in storage.
+   */
+  public async update(req: Request, res: Response) {
+    const { id } = req.params;
+    // await Model.update(req.body, { where: { id } });
+    return ApiResponse.success(res, { id }, 'Resource updated successfully');
+  }
+
+  /**
+   * Remove the specified resource from storage.
+   */
+  public async destroy(req: Request, res: Response) {
+    const { id } = req.params;
+    // await Model.destroy({ where: { id } });
+    return ApiResponse.success(res, null, 'Resource deleted successfully');
+  }
+}
+
+export default new {{ControllerName}}();

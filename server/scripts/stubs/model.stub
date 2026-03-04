@@ -1,0 +1,39 @@
+import { Model, DataTypes, Sequelize, Optional } from 'sequelize';
+
+interface {{ModelName}}Attributes {
+  id: number;
+  created_at?: Date;
+  updated_at?: Date;
+  deleted_at?: Date | null;
+}
+
+export interface {{ModelName}}CreationAttributes extends Optional<{{ModelName}}Attributes, 'id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
+
+class {{ModelName}} extends Model<{{ModelName}}Attributes, {{ModelName}}CreationAttributes> implements {{ModelName}}Attributes {
+  declare id: number;
+  declare created_at: Date;
+  declare updated_at: Date;
+  declare deleted_at: Date | null;
+
+  static initModel(sequelize: Sequelize) {
+    {{ModelName}}.init(
+      {
+        id: {
+          type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+        },
+      },
+      {
+        sequelize,
+        modelName: '{{ModelName}}',
+        tableName: '{{TableName}}', // e.g. 'products'
+        paranoid: true,
+        timestamps: true,
+        underscored: true,
+      }
+    );
+  }
+}
+
+export default {{ModelName}};

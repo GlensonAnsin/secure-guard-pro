@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    /* Base Options */
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+
+    /* Output Options */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "removeComments": true,
+    
+    /* Experimental Options (Helpful for Decorators if you use them later) */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}

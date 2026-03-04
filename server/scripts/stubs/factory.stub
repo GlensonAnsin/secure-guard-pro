@@ -1,0 +1,19 @@
+import { faker } from '@faker-js/faker';
+import {{ModelName}} from '../../models/{{ModelName}}.js';
+import Factory from './Factory.js';
+
+class {{FactoryName}} extends Factory<{{ModelName}}> {
+  protected model = {{ModelName}};
+
+  /**
+   * Define the model's default state.
+   */
+  protected definition() {
+    return {
+      // name: faker.person.fullName(),
+      // email: faker.internet.email(),
+    };
+  }
+}
+
+export default new {{FactoryName}}();
