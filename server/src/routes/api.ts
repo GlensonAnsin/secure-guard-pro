@@ -23,12 +23,15 @@ class ApiRoutes {
    */
   protected initializeRoutes(): void {
     // Auth
-    this.router.post('/login', Limiter.auth, AuthController.login);
+    this.router.post('/login', AuthController.login);
     this.router.post('/refresh', AuthController.refresh);
     this.router.post('/logout', Authentication.handle, AuthController.logout);
 
     // Protected
     this.router.get('/me', Authentication.handle, AuthController.me);
+
+    // Stats
+    this.router.get('/guard-stats', Authentication.handle, UserController.getGuardStats);
 
     // Users
     this.router.get('/users', Authentication.handle, UserController.index);

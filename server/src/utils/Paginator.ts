@@ -19,6 +19,7 @@ class Paginator {
 
     // Sequelize's findAndCountAll is perfect for pagination
     const { count, rows } = await model.findAndCountAll({
+      where: { role: 'guard' },
       ...options,
       limit,
       offset,

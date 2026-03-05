@@ -10,7 +10,8 @@ class DesignationController {
     try {
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 15;
-      const designations = await DesignationService.getAllDesignations(page, limit);
+      const userId = req.query.userId ? Number(req.query.userId) : undefined;
+      const designations = await DesignationService.getAllDesignations(page, limit, userId);
       return ApiResponse.success(res, designations, 'Designations retrieved successfully');
     } catch (error) {
       next(error);

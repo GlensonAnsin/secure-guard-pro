@@ -6,8 +6,9 @@ class DesignationService {
   /**
    * Get all designations with pagination.
    */
-  public async getAllDesignations(page: number, limit: number) {
+  public async getAllDesignations(page: number, limit: number, userId?: number) {
     return await Paginator.paginate(Designation, page, limit, {
+      where: userId ? { user_id: userId } : {},
       include: [
         { model: User, as: 'user', attributes: { exclude: ['password'] } },
       ],
