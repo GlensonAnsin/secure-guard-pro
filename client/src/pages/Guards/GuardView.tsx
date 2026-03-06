@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Clock } from 'lucide-react';
-import { guardService } from '../../services/guardService';
+import { guardViewService } from '../../services/guardViewService';
 import { useEffect, useState } from 'react';
 
 export function GuardView() {
   const { id } = useParams();
   const [guard, setGuard] = useState<any | null>(null);
-  const [designationHistory, setDesignationHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -15,12 +14,9 @@ export function GuardView() {
       if (!id) return;
       setIsLoading(true);
       try {
-        const [guardRes, designationsRes] = await Promise.all([
-          guardService.getById(parseInt(id)),
-          guardService.getDesignations(parseInt(id)),
-        ]);
+        const guardRes = await guardViewService.getById(parseInt(id));
+        console.log(guardRes);
         setGuard(guardRes.data);
-        setDesignationHistory(designationsRes.data.data || []);
       } catch (error) {
         console.error('Failed to fetch guard data:', error);
       } finally {
@@ -51,7 +47,7 @@ export function GuardView() {
 
   const fullName = `${guard.first_name || ''} ${guard.last_name || ''}`.trim();
   const initials = `${guard.first_name?.[0] || ''}${guard.last_name?.[0] || ''}`;
-  const currentAssignment = designationHistory[0];
+  const currentAssignment = guard.designations[0];
 
   return (
     <div className="space-y-6">
@@ -168,28 +164,28 @@ export function GuardView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
-                  {designationHistory.length > 0 ? (
-                    designationHistory.map((history) => (
-                      <tr key={history.id}>
+                  {guard.designations.length > 0 ? (
+                    guard.designations.map((designation: any) => (
+                      <tr key={designation.id}>
                         <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm">
-                          <div className="font-medium text-slate-900">{history.post}</div>
+                          <div className="font-medium text-slate-900">{designation.post}</div>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{history.shift}</td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{designation.shift}</td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
-                          {history.assignedDate || '-'}
+                          {designation.date_assigned || '-'}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
-                          {history.dismissalDate || '-'}
+                          {designation.date_of_dismissal || '-'}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                           <span
                             className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                              !history.dismissalDate
+                              !designation.date_of_dismissal
                                 ? 'bg-green-50 text-green-700 ring-green-600/20'
                                 : 'bg-slate-50 text-slate-600 ring-slate-500/10'
                             }`}
                           >
-                            {!history.dismissalDate ? 'Active' : 'Completed'}
+                            {!designation.date_of_dismissal ? 'Active' : 'Completed'}
                           </span>
                         </td>
                       </tr>

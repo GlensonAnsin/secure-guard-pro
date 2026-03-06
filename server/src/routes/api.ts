@@ -1,14 +1,15 @@
 import { Router } from 'express';
-import UserController from '../controllers/UserController.js';
+import GuardsController from '../controllers/GuardsController.js';
 import FirearmController from '../controllers/FirearmController.js';
 import FirearmIssuanceController from '../controllers/FirearmIssuanceController.js';
 import DesignationController from '../controllers/DesignationController.js';
 import AttendanceController from '../controllers/AttendanceController.js';
 import Authentication from '../middlewares/Authentication.js';
 import Validator from '../middlewares/Validator.js';
+import GuardViewController from '../controllers/GuardViewController.js';
 import UserRequest from '../requests/UserRequest.js';
 import AuthController from '../controllers/AuthController.js';
-import Limiter from '../middlewares/Limiter.js';
+// import Limiter from '../middlewares/Limiter.js';
 
 class ApiRoutes {
   public router: Router;
@@ -31,14 +32,14 @@ class ApiRoutes {
     this.router.get('/me', Authentication.handle, AuthController.me);
 
     // Stats
-    this.router.get('/guard-stats', Authentication.handle, UserController.getGuardStats);
+    this.router.get('/guard-stats', Authentication.handle, GuardsController.getGuardStats);
 
-    // Users
-    this.router.get('/users', Authentication.handle, UserController.index);
-    this.router.get('/users/:id', Authentication.handle, UserController.show);
-    this.router.post('/users', Authentication.handle, Validator.validate(UserRequest.store), UserController.store);
-    this.router.put('/users/:id', Authentication.handle, UserController.update);
-    this.router.delete('/users/:id', Authentication.handle, UserController.destroy);
+    // Guards
+    this.router.get('/guards', Authentication.handle, GuardsController.index);
+    this.router.get('/guards/:id', Authentication.handle, GuardViewController.show);
+    this.router.post('/guards', Authentication.handle, Validator.validate(UserRequest.store), GuardsController.store);
+    this.router.put('/guards/:id', Authentication.handle, GuardsController.update);
+    this.router.delete('/guards/:id', Authentication.handle, GuardsController.destroy);
 
     // Firearms
     this.router.get('/firearms', Authentication.handle, FirearmController.index);

@@ -2,7 +2,7 @@ import { Op, Sequelize } from 'sequelize';
 import User, { UserCreationAttributes } from '../models/User.js';
 import Paginator from '../utils/Paginator.js';
 
-class UserService {
+class GuardService {
   /**
    * Get all users with pagination.
    */
@@ -76,4 +76,4 @@ class UserService {
   }
 }
 
-export default new UserService();
+export default new GuardService();
