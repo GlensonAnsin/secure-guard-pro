@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 export function GuardView() {
   const { id } = useParams();
   const [guard, setGuard] = useState<any | null>(null);
+  const [currentAssignment, setCurrentAssignment] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -15,8 +16,11 @@ export function GuardView() {
       setIsLoading(true);
       try {
         const guardRes = await guardViewService.getById(parseInt(id));
-        console.log(guardRes);
         setGuard(guardRes.data);
+
+        if (guardRes.data.designations[0].status === 'active') {
+          setCurrentAssignment(guardRes.data.designations[0]);
+        }
       } catch (error) {
         console.error('Failed to fetch guard data:', error);
       } finally {
@@ -45,9 +49,10 @@ export function GuardView() {
     );
   }
 
+  console.log(currentAssignment.shift_in);
+
   const fullName = `${guard.first_name || ''} ${guard.last_name || ''}`.trim();
   const initials = `${guard.first_name?.[0] || ''}${guard.last_name?.[0] || ''}`;
-  const currentAssignment = guard.designations[0];
 
   return (
     <div className="space-y-6">
@@ -117,18 +122,18 @@ export function GuardView() {
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <p className="text-sm font-medium text-slate-500">Post</p>
-                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment?.post || 'Unassigned'}</p>
+                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment.address || 'Unassigned'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Shift</p>
                 <p className="mt-1 text-base font-medium text-slate-900 flex items-center gap-2">
                   <Clock className="h-4 w-4 text-slate-400" />
-                  {currentAssignment?.shift || 'No active shift'}
+                  {currentAssignment.shift_in  + '-' + currentAssignment.shift_out || 'No active shift'}
                 </p>
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Date Assigned</p>
-                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment?.assignedDate || '-'}</p>
+                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment.date_assigned || '-'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Assignment Type</p>
