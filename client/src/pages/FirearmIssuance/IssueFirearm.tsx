@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, ShieldAlert, Loader2 } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Save, ShieldAlert, Loader2, Search, X } from 'lucide-react';
 import { guardService } from '../../services/guardService';
 import { firearmService } from '../../services/firearmService';
 import { issuanceService } from '../../services/issuanceService';
@@ -15,27 +15,69 @@ export function IssueFirearm() {
   const [firearms, setFirearms] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
+  const [searchParams] = useSearchParams();
+  const initialFirearmId = searchParams.get('firearm_id') || '';
+
   const [formData, setFormData] = useState({
     user_id: '',
-    firearm_id: '',
+    firearm_id: initialFirearmId,
     date_of_issuance: new Date().toISOString().split('T')[0],
-    issuance_time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
     note: '',
   });
+
+  const [guardSearchQuery, setGuardSearchQuery] = useState('');
+  const [isSearchingGuard, setIsSearchingGuard] = useState(false);
+
+  const handleSearchGuard = async (e?: any) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!guardSearchQuery.trim()) return;
+    setIsSearchingGuard(true);
+    setGuards([]); // Clear previous results
+    try {
+      const res = await guardService.getAll(1, 10, guardSearchQuery, 'all');
+      console.log(res);
+      if (res.data) {
+        const foundGuards = res.data.data || [];
+        setGuards(foundGuards);
+
+        if (foundGuards.length === 1) {
+          // Auto-select if exactly 1 match
+          setFormData((prev) => ({ ...prev, user_id: foundGuards[0].id.toString() }));
+        } else if (foundGuards.length === 0) {
+          setError('No guards found matching your search.');
+          setTimeout(() => setError(null), 3000);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to search guards:', err);
+    } finally {
+      setIsSearchingGuard(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [guardsRes, firearmsRes]: any = await Promise.all([
-          guardService.getAll(1, 100),
-          firearmService.getAll(1, 100),
-        ]);
-        if (guardsRes.data?.data) {
-          setGuards(guardsRes.data.data);
+        const firearmsRes: any = await firearmService.getAll(1, 100);
+
+        // Similar strategy for firearms
+        let allFirearms: any[] = [];
+        if (firearmsRes.data) {
+          allFirearms = firearmsRes.data.data || [];
         }
-        if (firearmsRes.data?.data) {
-          // You might only want 'Available' firearms here
-          setFirearms(firearmsRes.data.data.filter((f: any) => f.status === 'Available'));
+
+        if (allFirearms.length > 0) {
+          const availableFirearms = allFirearms.filter(
+            (f: any) => f.status === 'available' || f.status === 'Available',
+          );
+
+          if (initialFirearmId) {
+            const currentFirearm = allFirearms.find((f: any) => f.id.toString() === initialFirearmId);
+            if (currentFirearm && !availableFirearms.some((f: any) => f.id.toString() === initialFirearmId)) {
+              availableFirearms.push(currentFirearm);
+            }
+          }
+          setFirearms(availableFirearms);
         }
       } catch (err) {
         console.error('Failed to load form data:', err);
@@ -44,7 +86,7 @@ export function IssueFirearm() {
       }
     };
     fetchData();
-  }, []);
+  }, [initialFirearmId]);
 
   const selectedGuard = guards.find((g) => g.id.toString() === formData.user_id);
   const selectedFirearm = firearms.find((f) => f.id.toString() === formData.firearm_id);
@@ -66,7 +108,6 @@ export function IssueFirearm() {
       const payload = {
         user_id: parseInt(formData.user_id, 10),
         firearm_id: parseInt(formData.firearm_id, 10),
-        // Combine date and time if backend supports DateTime, but model says DATEONLY, so date is enough for now
         date_of_issuance: formData.date_of_issuance,
         note: formData.note || null,
       };
@@ -131,35 +172,108 @@ export function IssueFirearm() {
                 <h2 className="text-base font-semibold leading-7 text-slate-900 border-b border-slate-200 pb-2">
                   Select Guard
                 </h2>
-                <div>
-                  <label htmlFor="user_id" className="block text-sm font-medium leading-6 text-slate-900">
-                    Search Guard
-                  </label>
-                  <div className="mt-2">
-                    <select
-                      id="user_id"
-                      name="user_id"
-                      value={formData.user_id}
-                      onChange={handleChange}
-                      className="block w-full rounded-md border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                    >
-                      <option value="">-- Choose a guard --</option>
-                      {guards.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.guard_id} - {g.first_name} {g.last_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                {selectedGuard && (
-                  <div className="bg-white p-4 rounded-md border border-slate-200 shadow-sm text-sm">
-                    <div className="flex justify-between text-slate-500 mb-2">
-                      <span>Contact:</span>{' '}
-                      <span className="font-medium text-slate-900">{selectedGuard.cel_num || 'N/A'}</span>
+                {!selectedGuard ? (
+                  <div>
+                    <label htmlFor="guard_search" className="block text-sm font-medium leading-6 text-slate-900">
+                      Search Guard by ID or Name
+                    </label>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        id="guard_search"
+                        value={guardSearchQuery}
+                        onChange={(e) => setGuardSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSearchGuard(e);
+                          }
+                        }}
+                        className="block w-full rounded-md border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
+                        placeholder="e.g. G-001 or John Doe"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSearchGuard}
+                        disabled={isSearchingGuard || !guardSearchQuery.trim()}
+                        className="inline-flex items-center gap-2 rounded-md bg-[#135dff] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#135dff]/80 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isSearchingGuard ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                        Search
+                      </button>
                     </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Status:</span> <span className="font-medium text-slate-900">{selectedGuard.status}</span>
+
+                    {guards.length > 0 && !formData.user_id && (
+                      <div className="mt-4 space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                          Search Results
+                        </p>
+                        {guards.map((g) => (
+                          <div
+                            key={g.id}
+                            onClick={() => setFormData((prev) => ({ ...prev, user_id: g.id.toString() }))}
+                            className="p-3 bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-colors flex justify-between items-center group"
+                          >
+                            <div>
+                              <p className="font-medium text-slate-900 text-sm">
+                                {g.guard_id ? `${g.guard_id} - ` : ''}
+                                {g.first_name} {g.last_name}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {g.status === 'assigned'
+                                  ? 'Assigned'
+                                  : g.status === 'unassigned'
+                                    ? 'Unassigned'
+                                    : g.status === 'on_leave'
+                                      ? 'On Leave'
+                                      : g.status === 'resigned'
+                                        ? 'Resigned'
+                                        : 'Unknown'}
+                              </p>
+                            </div>
+                            <span className="text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                              Select
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white p-4 rounded-md border-2 border-blue-500 shadow-sm text-sm relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, user_id: '' }));
+                        setGuards([]);
+                        setGuardSearchQuery('');
+                      }}
+                      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full p-1 transition-colors cursor-pointer"
+                      title="Remove selected guard"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="pr-8">
+                      <p className="font-bold text-slate-900 text-base mb-1">
+                        {selectedGuard.guard_id ? `${selectedGuard.guard_id} - ` : ''}
+                        {selectedGuard.first_name} {selectedGuard.last_name}
+                      </p>
+                      <div className="flex flex-col gap-1 mt-3">
+                        <div className="flex justify-between text-slate-500">
+                          <span>Contact:</span>{' '}
+                          <span className="font-medium text-slate-900">{selectedGuard.cel_num || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-500">
+                          <span>Status:</span>{' '}
+                          <span className="font-medium text-slate-900 capitalize">
+                            {selectedGuard.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -180,7 +294,7 @@ export function IssueFirearm() {
                       name="firearm_id"
                       value={formData.firearm_id}
                       onChange={handleChange}
-                      className="block w-full rounded-md border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                      className="block w-full rounded-md border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                     >
                       <option value="">-- Choose a firearm --</option>
                       {firearms.map((f) => (
@@ -206,24 +320,16 @@ export function IssueFirearm() {
 
               <div className="sm:col-span-2">
                 <label htmlFor="date_of_issuance" className="block text-sm font-medium leading-6 text-slate-900">
-                  Issuance Date & Time
+                  Issuance Date
                 </label>
-                <div className="mt-2 flex gap-4">
+                <div className="mt-2">
                   <input
                     type="date"
                     name="date_of_issuance"
                     id="date_of_issuance"
                     value={formData.date_of_issuance}
                     onChange={handleChange}
-                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-                  />
-                  <input
-                    type="time"
-                    name="issuance_time"
-                    id="issuance_time"
-                    value={formData.issuance_time}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                   />
                 </div>
               </div>
@@ -239,7 +345,7 @@ export function IssueFirearm() {
                     rows={4}
                     value={formData.note}
                     onChange={handleChange}
-                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                     placeholder="Reason for issuance or condition noted during handoff..."
                   ></textarea>
                 </div>
@@ -249,13 +355,13 @@ export function IssueFirearm() {
         </div>
 
         <div className="flex items-center justify-end gap-x-6 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:px-10">
-          <Link to="/issuance" className="text-sm font-semibold leading-6 text-slate-900">
+          <Link to="/issuance" className="text-sm font-semibold leading-6 text-slate-900 cursor-pointer">
             Cancel
           </Link>
           <button
             type="submit"
             disabled={isSubmitting || isLoadingData}
-            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 flex items-center gap-2"
+            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isSubmitting ? 'Processing...' : 'Complete Issuance'}

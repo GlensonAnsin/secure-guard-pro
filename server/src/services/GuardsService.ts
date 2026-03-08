@@ -65,10 +65,10 @@ class GuardService {
       },
       attributes: [
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'total'],
-        [Sequelize.literal("COUNT(CASE WHEN status = 'active' THEN 1 END)"), 'active'],
+        [Sequelize.literal("COUNT(CASE WHEN status = 'assigned' THEN 1 END)"), 'assigned'],
         [Sequelize.literal("COUNT(CASE WHEN status = 'unassigned' THEN 1 END)"), 'unassigned'],
         [Sequelize.literal("COUNT(CASE WHEN status = 'on_leave' THEN 1 END)"), 'on_leave'],
-        [Sequelize.literal("COUNT(CASE WHEN status = 'inactive' THEN 1 END)"), 'inactive'],
+        [Sequelize.literal("COUNT(CASE WHEN status = 'resigned' THEN 1 END)"), 'resigned'],
       ],
       raw: true,
     });

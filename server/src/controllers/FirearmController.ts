@@ -10,8 +10,22 @@ class FirearmController {
     try {
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 15;
-      const firearms = await FirearmService.getAllFirearms(page, limit);
+      const search = req.query.search as string;
+      const status = req.query.status as string;
+      const firearms = await FirearmService.getAllFirearms(page, limit, search, status);
       return ApiResponse.success(res, firearms, 'Firearms retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get firearm stats.
+   */
+  public async getFirearmStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await FirearmService.getFirearmStats();
+      return ApiResponse.success(res, stats, 'Firearm statistics retrieved successfully');
     } catch (error) {
       next(error);
     }

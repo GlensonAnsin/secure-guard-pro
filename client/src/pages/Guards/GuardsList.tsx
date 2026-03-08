@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   Plus,
-  MoreVertical,
   Eye,
   Edit,
   ChevronLeft,
@@ -18,14 +17,15 @@ import {
   ShieldBan,
 } from 'lucide-react';
 import { guardService } from '../../services/guardService';
+import { getStatusColor } from '../../lib/statusColor';
 
 export function GuardsList() {
   const [guards, setGuards] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [activeCount, setActiveCount] = useState(0);
+  const [assignedCount, setAssignedCount] = useState(0);
   const [unassignedCount, setUnassignedCount] = useState(0);
   const [onLeaveCount, setOnLeaveCount] = useState(0);
-  const [inactiveCount, setInactiveCount] = useState(0);
+  const [resignedCount, setResignedCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,62 +35,49 @@ export function GuardsList() {
 
   const stats = [
     { name: 'Total Guards', value: totalCount, icon: Users, key: 'total' },
-    { name: 'Active', value: activeCount, icon: ShieldCheck, key: 'active' },
+    { name: 'Assigned', value: assignedCount, icon: ShieldCheck, key: 'assigned' },
     { name: 'Unassigned', value: unassignedCount, icon: Clock, key: 'unassigned' },
     { name: 'On Leave', value: onLeaveCount, icon: UserX, key: 'on_leave' },
-    { name: 'Inactive', value: inactiveCount, icon: ShieldBan, key: 'inactive' },
+    { name: 'Resigned', value: resignedCount, icon: ShieldBan, key: 'resigned' },
   ];
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await guardService.getGuardStats();
-        if (res.data) {
-          setTotalCount(res.data.meta.total);
-          setActiveCount(res.data.meta.active);
-          setUnassignedCount(res.data.meta.unassigned);
-          setOnLeaveCount(res.data.meta.on_leave);
-          setInactiveCount(res.data.meta.inactive);
-        }
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
+  const fetchStats = async () => {
+    try {
+      const res = await guardService.getGuardStats();
+      if (res.data) {
+        setTotalCount(res.data.meta.total);
+        setAssignedCount(res.data.meta.assigned);
+        setUnassignedCount(res.data.meta.unassigned);
+        setOnLeaveCount(res.data.meta.on_leave);
+        setResignedCount(res.data.meta.resigned);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const fetchGuards = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await guardService.getAll(currentPage, itemsPerPage, searchQuery, statusFilter);
+      if (res.data) {
+        setGuards(res.data.data || []);
+        setTotalPages(res.data.meta.last_page);
+      }
+    } catch (error) {
+      console.error('Failed to fetch guards:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, itemsPerPage, searchQuery, statusFilter]);
+
+  useEffect(() => {
     fetchStats();
   }, []);
 
   useEffect(() => {
-    const fetchGuards = async () => {
-      setIsLoading(true);
-      try {
-        const res = await guardService.getAll(currentPage, itemsPerPage, searchQuery, statusFilter);
-        if (res.data) {
-          setGuards(res.data.data || []);
-          setTotalPages(res.data.meta.last_page);
-        }
-      } catch (error) {
-        console.error('Failed to fetch guards:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchGuards();
-  }, [currentPage, searchQuery, statusFilter]);
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'active':
-        return 'bg-green-100 text-green-700 ring-green-600/20';
-      case 'unassigned':
-        return 'bg-blue-100 text-blue-700 ring-blue-600/20';
-      case 'on_leave':
-        return 'bg-yellow-100 text-yellow-700 ring-yellow-600/20';
-      case 'inactive':
-        return 'bg-red-100 text-red-700 ring-red-600/10';
-      default:
-        return 'bg-slate-100 text-slate-700 ring-slate-500/10';
-    }
-  };
+  }, [fetchGuards]);
 
   return (
     <div className="space-y-6 flex flex-col h-full">
@@ -116,7 +103,7 @@ export function GuardsList() {
                 <p className="text-sm font-medium text-slate-500">{stat.name}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{stat.value}</p>
               </div>
-              <div className="rounded-md bg-slate-50 p-2 border border-slate-100">
+              <div className="rounded-md bg-blue-50 p-2 border border-slate-100">
                 <stat.icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
               </div>
             </div>
@@ -125,9 +112,9 @@ export function GuardsList() {
       </div>
 
       <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200 flex-1 flex flex-col">
-        <div className="border-b border-slate-200 p-4 sm:flex sm:items-center sm:justify-between">
-          <div className="flex flex-1 gap-4 items-center">
-            <div className="relative max-w-sm flex-1">
+        <div className="border-b border-slate-200 p-4">
+          <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:items-center">
+            <div className="relative w-full sm:max-w-sm sm:flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="h-4 w-4 text-slate-400" />
               </div>
@@ -136,7 +123,10 @@ export function GuardsList() {
                 className="block w-full rounded-md border-0 py-1.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
                 placeholder="Search guards by name or ID..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -144,13 +134,16 @@ export function GuardsList() {
               <select
                 className="block rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="all">All Statuses</option>
-                <option value="active">Active</option>
+                <option value="assigned">Assigned</option>
                 <option value="unassigned">Unassigned</option>
                 <option value="on_leave">On Leave</option>
-                <option value="inactive">Inactive</option>
+                <option value="resigned">Resigned</option>
               </select>
             </div>
           </div>
@@ -172,7 +165,7 @@ export function GuardsList() {
                   Name
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
-                  Location
+                  Address
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
                   Contact
@@ -181,7 +174,7 @@ export function GuardsList() {
                   scope="col"
                   className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900 hidden lg:table-cell"
                 >
-                  Date Assigned
+                  Date Hired
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
                   Status
@@ -228,14 +221,14 @@ export function GuardsList() {
                       <span
                         className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(guard.status)}`}
                       >
-                        {guard.status === 'active'
-                          ? 'Active'
+                        {guard.status === 'assigned'
+                          ? 'Assigned'
                           : guard.status === 'unassigned'
                             ? 'Unassigned'
                             : guard.status === 'on_leave'
                               ? 'On Leave'
-                              : guard.status === 'inactive'
-                                ? 'Inactive'
+                              : guard.status === 'resigned'
+                                ? 'Resigned'
                                 : 'Unknown'}
                       </span>
                     </td>
@@ -243,17 +236,18 @@ export function GuardsList() {
                       <div className="flex justify-end gap-2">
                         <Link
                           to={`/guards/${guard.id}`}
-                          className="text-slate-400 hover:text-blue-600 transition-colors"
+                          className="text-slate-400 hover:text-[#135dff] transition-colors"
                           title="View Details"
                         >
                           <Eye className="h-5 w-5" />
                         </Link>
-                        <button className="text-slate-400 hover:text-slate-900 transition-colors" title="Edit Guard">
+                        <Link
+                          to={`/guards/${guard.id}/edit`}
+                          className="text-slate-400 hover:text-[#135dff] transition-colors"
+                          title="Edit Guard"
+                        >
                           <Edit className="h-5 w-5" />
-                        </button>
-                        <button className="text-slate-400 hover:text-slate-900 transition-colors lg:hidden">
-                          <MoreVertical className="h-5 w-5" />
-                        </button>
+                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -276,14 +270,14 @@ export function GuardsList() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1 || isLoading}
-                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || isLoading}
-                className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 Next
               </button>
@@ -301,7 +295,7 @@ export function GuardsList() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1 || isLoading}
-                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <span className="sr-only">Previous</span>
                     <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -315,7 +309,7 @@ export function GuardsList() {
                         currentPage === i + 1
                           ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
                           : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0'
-                      }`}
+                      } cursor-pointer`}
                     >
                       {i + 1}
                     </button>
@@ -323,7 +317,7 @@ export function GuardsList() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages || isLoading}
-                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <span className="sr-only">Next</span>
                     <ChevronRight className="h-5 w-5" aria-hidden="true" />

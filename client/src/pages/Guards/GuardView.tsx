@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Clock, Link as LinkIcon, Edit } from 'lucide-react';
 import { guardViewService } from '../../services/guardViewService';
 import { useEffect, useState } from 'react';
+import { getStatusColor } from '../../lib/statusColor';
 
 export function GuardView() {
   const { id } = useParams();
@@ -17,9 +18,10 @@ export function GuardView() {
       try {
         const guardRes = await guardViewService.getById(parseInt(id));
         setGuard(guardRes.data);
+        console.log(guardRes.data.designations[guardRes.data.designations.length - 1]);
 
-        if (guardRes.data.designations[0].status === 'active') {
-          setCurrentAssignment(guardRes.data.designations[0]);
+        if (guardRes.data.designations[guardRes.data.designations.length - 1].status === 'active') {
+          setCurrentAssignment(guardRes.data.designations[guardRes.data.designations.length - 1]);
         }
       } catch (error) {
         console.error('Failed to fetch guard data:', error);
@@ -49,21 +51,40 @@ export function GuardView() {
     );
   }
 
-  console.log(currentAssignment.shift_in);
-
   const fullName = `${guard.first_name || ''} ${guard.last_name || ''}`.trim();
   const initials = `${guard.first_name?.[0] || ''}${guard.last_name?.[0] || ''}`;
 
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    const [hourStr, minuteStr] = timeString.split(':');
+    const hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour.toString().padStart(2, '0')}:${minuteStr} ${ampm}`;
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link to="/guards" className="rounded-full p-2 hover:bg-slate-100 text-slate-500 transition-colors">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Guard Profile</h1>
-          <p className="mt-1 text-sm text-slate-500">View complete information and assignment history.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link to="/guards" className="rounded-full p-2 hover:bg-slate-100 text-slate-500 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Guard Profile</h1>
+            <p className="mt-1 text-sm text-slate-500">View complete information and assignment history.</p>
+          </div>
         </div>
+
+        {guard.status !== 'assigned' && guard.status !== 'resigned' && (
+          <Link
+            to={`/guards/${guard.id}/assign`}
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors shrink-0"
+          >
+            <LinkIcon className="-ml-1 mr-2 h-4 w-4" aria-hidden="true" />
+            Assign to Client
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -76,11 +97,9 @@ export function GuardView() {
             <h2 className="text-xl font-bold text-slate-900">{fullName}</h2>
             <p className="text-sm font-medium text-slate-500 mt-1">{guard.guard_id || `User-${guard.id}`}</p>
             <span
-              className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${
-                guard.status === 'active'
-                  ? 'bg-green-100 text-green-700 ring-green-600/20'
-                  : 'bg-slate-100 text-slate-600 ring-slate-500/10'
-              }`}
+              className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
+                guard.status,
+              )}`}
             >
               {guard.status ? guard.status.charAt(0).toUpperCase() + guard.status.slice(1) : 'Unknown'}
             </span>
@@ -98,7 +117,7 @@ export function GuardView() {
               <MapPin className="h-5 w-5 text-slate-400" />
               <span className="text-slate-700">
                 {guard.barangay && guard.city_or_municipality
-                  ? `${guard.barangay}, ${guard.city_or_municipality}`
+                  ? `${guard.street || ''}, ${guard.barangay}, ${guard.city_or_municipality}, ${guard.province}, ${guard.region}`
                   : 'Address unassigned'}
               </span>
             </div>
@@ -113,22 +132,33 @@ export function GuardView() {
         <div className="xl:col-span-2 space-y-6">
           {/* Current Assignment */}
           <div className="border border-slate-200 rounded-xl bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-6 py-4">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
               <h3 className="text-base font-semibold leading-6 text-slate-900 flex items-center gap-2">
                 <Shield className="h-5 w-5 text-blue-500" />
                 Current Assignment
               </h3>
+              {currentAssignment.id && (
+                <Link
+                  to={`/guards/${guard.id}/assignments/${currentAssignment.id}/edit`}
+                  className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 transition-colors"
+                  title="Edit Current Assignment"
+                >
+                  <Edit className="h-4 w-4" />
+                </Link>
+              )}
             </div>
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <p className="text-sm font-medium text-slate-500">Post</p>
-                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment.address || 'Unassigned'}</p>
+                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment.address || '-'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Shift</p>
                 <p className="mt-1 text-base font-medium text-slate-900 flex items-center gap-2">
                   <Clock className="h-4 w-4 text-slate-400" />
-                  {currentAssignment.shift_in  + '-' + currentAssignment.shift_out || 'No active shift'}
+                  {currentAssignment.shift_in && currentAssignment.shift_out
+                    ? formatTime(currentAssignment.shift_in) + ' - ' + formatTime(currentAssignment.shift_out)
+                    : '-'}
                 </p>
               </div>
               <div>
@@ -136,8 +166,20 @@ export function GuardView() {
                 <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment.date_assigned || '-'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Assignment Type</p>
-                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment ? 'Regular' : '-'}</p>
+                <p className="text-sm font-medium text-slate-500">Client</p>
+                <p className="mt-1 text-base font-medium text-slate-900">{currentAssignment.client || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Hours Worked</p>
+                <p className="mt-1 text-base font-medium text-slate-900">
+                  {currentAssignment.total_hours_worked || '0'} hrs
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Monthly Hours Worked</p>
+                <p className="mt-1 text-base font-medium text-slate-900">
+                  {currentAssignment.monthly_hours_worked || '0'} hrs
+                </p>
               </div>
             </div>
           </div>
@@ -166,6 +208,9 @@ export function GuardView() {
                     <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
                       Status
                     </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
+                      Note
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
@@ -173,9 +218,13 @@ export function GuardView() {
                     guard.designations.map((designation: any) => (
                       <tr key={designation.id}>
                         <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm">
-                          <div className="font-medium text-slate-900">{designation.post}</div>
+                          <div className="font-medium text-slate-900">{designation.address}</div>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{designation.shift}</td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                          {designation.shift_in && designation.shift_out
+                            ? formatTime(designation.shift_in) + ' - ' + formatTime(designation.shift_out)
+                            : '-'}
+                        </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
                           {designation.date_assigned || '-'}
                         </td>
@@ -184,20 +233,25 @@ export function GuardView() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                           <span
-                            className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                              !designation.date_of_dismissal
-                                ? 'bg-green-50 text-green-700 ring-green-600/20'
-                                : 'bg-slate-50 text-slate-600 ring-slate-500/10'
-                            }`}
+                            className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
+                              designation.status,
+                            )}`}
                           >
-                            {!designation.date_of_dismissal ? 'Active' : 'Completed'}
+                            {designation.status === 'active'
+                              ? 'Active'
+                              : designation.status === 'completed'
+                                ? 'Completed'
+                                : 'Dismissed'}
                           </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
+                          {designation.note || '-'}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-sm text-slate-500">
+                      <td colSpan={6} className="py-6 text-center text-sm text-slate-500">
                         No designation history found.
                       </td>
                     </tr>

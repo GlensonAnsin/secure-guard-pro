@@ -4,7 +4,7 @@ import { PaginatedResult } from '../types/Pagination.js';
 class Paginator {
   /**
    * Paginate a Sequelize Model.
-   * * @param model The Sequelize Model class (e.g., User)
+   * @param model The Sequelize Model class (e.g., User)
    * @param page The current page number (default: 1)
    * @param limit The number of items per page (default: 15)
    * @param options Additional Sequelize query options (where, include, order)
@@ -19,7 +19,6 @@ class Paginator {
 
     // Sequelize's findAndCountAll is perfect for pagination
     const { count, rows } = await model.findAndCountAll({
-      where: { role: 'guard' },
       ...options,
       limit,
       offset,

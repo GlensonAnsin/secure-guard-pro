@@ -2,8 +2,8 @@
 import api from './api';
 
 export const attendanceService = {
-  getAll: async (page = 1, limit = 15) => {
-    return await api.get(`/attendances`, { params: { page, limit } });
+  getAll: async (page = 1, limit = 15, search = '', status = '', date = '') => {
+    return await api.get(`/attendances`, { params: { page, limit, search, status, date } });
   },
   
   getById: async (id: number) => {
@@ -20,5 +20,16 @@ export const attendanceService = {
 
   delete: async (id: number) => {
     return await api.delete(`/attendances/${id}`);
+  },
+
+  getAttendanceStats: async () => {
+    return await api.get(`/attendance-stats`);
+  },
+
+  exportReport: async (search = '', status = '', date = '') => {
+    return await api.get(`/attendance-export`, { 
+      params: { search, status, date },
+      responseType: 'blob' 
+    });
   }
 };

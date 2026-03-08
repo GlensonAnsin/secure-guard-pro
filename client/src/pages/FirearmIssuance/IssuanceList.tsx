@@ -2,27 +2,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ArrowRightLeft, Calendar, Eye, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, Plus, ArrowRightLeft, Eye, ChevronLeft, ChevronRight, Loader2, Filter } from 'lucide-react';
 import { issuanceService } from '../../services/issuanceService';
 
 export function IssuanceList() {
   const [issuances, setIssuances] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [returnStatus, setReturnStatus] = useState({
+    isOpen: false,
+    issueId: null as number | null,
+    isProcessing: false,
+  });
   const itemsPerPage = 10;
-
-  useEffect(() => {
-    fetchIssuances();
-  }, [currentPage]);
 
   const fetchIssuances = async () => {
     setIsLoading(true);
     try {
-      const res = (await issuanceService.getAll(currentPage, itemsPerPage)) as any;
-      if (res.success && res.data) {
+      const res = await issuanceService.getAll(currentPage, itemsPerPage, searchQuery, statusFilter);
+      if (res.data) {
         setIssuances(res.data.data || []);
         setTotalPages(res.data.meta?.last_page || 1);
         setTotalCount(res.data.meta?.total || 0);
@@ -34,17 +36,30 @@ export function IssuanceList() {
     }
   };
 
-  // Filter Data (Client side filter for current page items)
-  const filteredIssuances = issuances.filter((issue) => {
-    const term = searchQuery.toLowerCase();
+  useEffect(() => {
+    fetchIssuances();
+  }, [currentPage, searchQuery, statusFilter]);
 
-    // Safety checks for nested access
-    const firstLast = issue.user ? `${issue.user.first_name} ${issue.user.last_name}`.toLowerCase() : '';
-    const guardId = issue.user?.guard_id?.toLowerCase() || '';
-    const serial = issue.firearm?.serial_num?.toLowerCase() || '';
+  // Filter Data
 
-    return firstLast.includes(term) || guardId.includes(term) || serial.includes(term);
-  });
+  const handleReturnFirearm = async () => {
+    if (!returnStatus.issueId) return;
+    setReturnStatus((prev) => ({ ...prev, isProcessing: true }));
+    try {
+      const payload = {
+        turn_in_date: new Date().toISOString().split('T')[0],
+      };
+
+      const res = await issuanceService.update(returnStatus.issueId, payload);
+      if (res.status === 200) {
+        setReturnStatus({ isOpen: false, issueId: null, isProcessing: false });
+        fetchIssuances(); // Refresh the list
+      }
+    } catch (err) {
+      console.error('Failed to return firearm:', err);
+      setReturnStatus((prev) => ({ ...prev, isProcessing: false }));
+    }
+  };
 
   return (
     <div className="space-y-6 flex flex-col h-full">
@@ -65,9 +80,9 @@ export function IssuanceList() {
       </div>
 
       <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200 flex-1 flex flex-col">
-        <div className="border-b border-slate-200 p-4 sm:flex sm:items-center sm:justify-between">
-          <div className="flex flex-1 gap-4 items-center">
-            <div className="relative max-w-sm flex-1">
+        <div className="border-b border-slate-200 p-4">
+          <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:items-center">
+            <div className="relative w-full sm:max-w-sm sm:flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="h-4 w-4 text-slate-400" />
               </div>
@@ -76,15 +91,26 @@ export function IssuanceList() {
                 className="block w-full rounded-md border-0 py-1.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
                 placeholder="Search by guard name, ID, or serial..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400 hidden sm:block" />
-              <input
-                type="date"
-                className="block rounded-md border-0 py-1.5 px-3 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Filter className="h-4 w-4 text-slate-400 hidden sm:block" />
+              <select
+                className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="all">All</option>
+                <option value="active">Active Issuances</option>
+                <option value="returned">Returned</option>
+              </select>
             </div>
           </div>
         </div>
@@ -119,6 +145,9 @@ export function IssuanceList() {
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
                   Status
                 </th>
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
+                  Note
+                </th>
                 <th
                   scope="col"
                   className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-sm font-semibold text-slate-900"
@@ -128,8 +157,8 @@ export function IssuanceList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {!isLoading && filteredIssuances.length > 0 ? (
-                filteredIssuances.map((issue) => {
+              {!isLoading && issuances.length > 0 ? (
+                issuances.map((issue) => {
                   const isActive = !issue.turn_in_date;
                   return (
                     <tr key={issue.id} className="hover:bg-slate-50 transition-colors">
@@ -162,11 +191,13 @@ export function IssuanceList() {
                           {isActive ? 'Active' : 'Returned'}
                         </span>
                       </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{issue.note}</td>
                       <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                         <div className="flex justify-end gap-3">
                           {isActive && (
                             <button
-                              className="text-amber-600 hover:text-amber-900 transition-colors flex items-center gap-1"
+                              onClick={() => setReturnStatus({ isOpen: true, issueId: issue.id, isProcessing: false })}
+                              className="text-[#135dff] hover:text-[#135dff]/80 transition-colors flex items-center gap-1 cursor-pointer"
                               title="Process Return"
                             >
                               <ArrowRightLeft className="h-4 w-4" />
@@ -174,10 +205,15 @@ export function IssuanceList() {
                             </button>
                           )}
                           <button
-                            className="text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1"
+                            onClick={() =>
+                              alert(
+                                `View Issuance Details:\nGuard: ${issue.user?.first_name} ${issue.user?.last_name}\nFirearm: ${issue.firearm?.type} (${issue.firearm?.serial_num})\nDate Issued: ${issue.date_of_issuance}\nDate Returned: ${issue.turn_in_date || 'N/A'}\nNote: ${issue.note || 'None'}`,
+                              )
+                            }
+                            className="text-slate-400 hover:text-[#135dff] transition-colors flex items-center gap-1 cursor-pointer"
                             title="View Full Log"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5 w-5" />
                           </button>
                         </div>
                       </td>
@@ -202,14 +238,14 @@ export function IssuanceList() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1 || isLoading}
-                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || isLoading}
-                className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
               >
                 Next
               </button>
@@ -227,7 +263,7 @@ export function IssuanceList() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1 || isLoading}
-                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50"
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                   </button>
@@ -236,7 +272,7 @@ export function IssuanceList() {
                       key={i + 1}
                       onClick={() => setCurrentPage(i + 1)}
                       disabled={isLoading}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold cursor-pointer ${
                         currentPage === i + 1
                           ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
                           : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50'
@@ -248,7 +284,7 @@ export function IssuanceList() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages || isLoading}
-                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50"
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronRight className="h-5 w-5" aria-hidden="true" />
                   </button>
@@ -258,6 +294,37 @@ export function IssuanceList() {
           </div>
         )}
       </div>
+      {/* Return Confirmation Modal */}
+      {returnStatus.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Process Firearm Return</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Are you sure you want to mark this firearm as returned? The firearm will be marked as "available" again in
+              the inventory.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setReturnStatus({ isOpen: false, issueId: null, isProcessing: false })}
+                disabled={returnStatus.isProcessing}
+                className="px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleReturnFirearm}
+                disabled={returnStatus.isProcessing}
+                className="px-4 py-2 text-sm font-semibold text-white bg-[#135dff] hover:bg-[#135dff]/80 rounded-md shadow-sm transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {returnStatus.isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
+                Confirm Return
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Crosshair,
@@ -10,78 +9,74 @@ import {
   Search,
   Filter,
   Plus,
-  MoreVertical,
   Edit,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { firearmService } from '../../services/firearmService';
-
-const stats = [
-  { name: 'Total Firearms', value: '48', icon: Crosshair, key: 'total' },
-  { name: 'Issued', value: '32', icon: ShieldAlert, key: 'issued' },
-  { name: 'Available', value: '12', icon: CheckCircle2, key: 'available' },
-  { name: 'Maintenance', value: '4', icon: AlertTriangle, key: 'maintenance' },
-];
+import { getStatusColor } from '../../lib/statusColor';
 
 export function FirearmsList() {
   const [firearms, setFirearms] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [issuedCount, setIssuedCount] = useState(0);
+  const [availableCount, setAvailableCount] = useState(0);
+  const [maintenanceCount, setMaintenanceCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchFirearms();
-  }, [currentPage]);
+  const stats = [
+    { name: 'Total Firearms', value: totalCount, icon: Crosshair, key: 'total' },
+    { name: 'Issued', value: issuedCount, icon: ShieldAlert, key: 'issued' },
+    { name: 'Available', value: availableCount, icon: CheckCircle2, key: 'available' },
+    { name: 'Maintenance', value: maintenanceCount, icon: AlertTriangle, key: 'maintenance' },
+  ];
 
-  const fetchFirearms = async () => {
+  const fetchStats = async () => {
+    try {
+      const res = await firearmService.getStats();
+      if (res.data) {
+        setTotalCount(res.data.total || 0);
+        setIssuedCount(res.data.issued || 0);
+        setAvailableCount(res.data.available || 0);
+        setMaintenanceCount(res.data.maintenance || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch firearm stats:', error);
+    }
+  };
+
+  // Fetch firearms whenever page, search, or status changes
+  const fetchFirearms = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = (await firearmService.getAll(currentPage, itemsPerPage)) as any;
-      if (res.success && res.data) {
+      const res = await firearmService.getAll(currentPage, itemsPerPage, searchQuery, statusFilter);
+      if (res.data) {
         setFirearms(res.data.data || []);
         setTotalPages(res.data.meta?.last_page || 1);
-        setTotalCount(res.data.meta?.total || 0);
       }
     } catch (error) {
       console.error('Failed to fetch firearms:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, statusFilter]);
 
-  // Filter Data (Client side filter for current page items)
-  const filteredFirearms = firearms.filter((fa) => {
-    const term = searchQuery.toLowerCase();
-    const matchesSearch =
-      (fa.serial_num && fa.serial_num.toLowerCase().includes(term)) ||
-      (fa.type && fa.type.toLowerCase().includes(term));
+  // Initial fetch and fetch on dependencies change
+  useEffect(() => {
+    fetchFirearms();
+  }, [fetchFirearms]);
 
-    // The DB stores mixed cased statuses but might use proper case
-    const matchesStatus = statusFilter === 'All' || fa.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
-  const getStatusStyle = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'available':
-        return 'bg-green-100 text-green-700 ring-green-600/20';
-      case 'issued':
-        return 'bg-blue-100 text-blue-700 ring-blue-600/20';
-      case 'maintenance':
-        return 'bg-amber-100 text-amber-700 ring-amber-600/20';
-      default:
-        return 'bg-slate-100 text-slate-700 ring-slate-500/10';
-    }
-  };
-
-  // Simulated assigning logic - if firearm is Issued, find its issuance (assuming inclusion works or API provides it)
-  // Our typical REST endpoints don't deep nest without reason, but we check if `issuances` exists
   const getAssignedTo = (fa: any) => {
     if (fa.status?.toLowerCase() === 'issued' && fa.issuances && fa.issuances.length > 0) {
       // Find the active issuance or the latest one
@@ -118,12 +113,10 @@ export function FirearmsList() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">{stat.name}</p>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                  {stat.key === 'total' && totalCount > 0 ? totalCount : stat.value}
-                </p>
+                <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{stat.value}</p>
               </div>
-              <div className="rounded-md bg-slate-50 p-2 border border-slate-100">
-                <stat.icon className="h-6 w-6 text-slate-700" aria-hidden="true" />
+              <div className="rounded-md bg-blue-50 p-2 border border-slate-100">
+                <stat.icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -131,9 +124,9 @@ export function FirearmsList() {
       </div>
 
       <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200 flex-1 flex flex-col">
-        <div className="border-b border-slate-200 p-4 sm:flex sm:items-center sm:justify-between">
-          <div className="flex flex-1 gap-4 items-center">
-            <div className="relative max-w-sm flex-1">
+        <div className="border-b border-slate-200 p-4">
+          <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:items-center">
+            <div className="relative w-full sm:max-w-sm sm:flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search className="h-4 w-4 text-slate-400" />
               </div>
@@ -142,20 +135,27 @@ export function FirearmsList() {
                 className="block w-full rounded-md border-0 py-1.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
                 placeholder="Search by serial or type..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="h-4 w-4 text-slate-400 hidden sm:block" />
               <select
-                className="block rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
+                className="block w-full sm:w-auto rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
-                <option value="All">All Statuses</option>
-                <option value="Available">Available</option>
-                <option value="Issued">Issued</option>
-                <option value="Maintenance">Maintenance</option>
+                <option value="all">All Statuses</option>
+                <option value="available">Available</option>
+                <option value="issued">Issued</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="expired">Expired</option>
               </select>
             </div>
           </div>
@@ -190,6 +190,12 @@ export function FirearmsList() {
                 </th>
                 <th
                   scope="col"
+                  className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900 hidden lg:table-cell"
+                >
+                  Note
+                </th>
+                <th
+                  scope="col"
                   className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-sm font-semibold text-slate-900"
                 >
                   Actions
@@ -197,8 +203,8 @@ export function FirearmsList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {!isLoading && filteredFirearms.length > 0 ? (
-                filteredFirearms.map((fa) => {
+              {!isLoading && firearms.length > 0 ? (
+                firearms.map((fa) => {
                   const expiryDate = new Date(fa.exp_of_registration);
                   const isExpiringSoon = (expiryDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24) < 30;
 
@@ -218,25 +224,42 @@ export function FirearmsList() {
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
                         <span
-                          className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusStyle(fa.status)}`}
+                          className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(fa.status)}`}
                         >
-                          {fa.status || 'Available'}
+                          {fa.status === 'available'
+                            ? 'Available'
+                            : fa.status === 'issued'
+                              ? 'Issued'
+                              : fa.status === 'maintenance'
+                                ? 'Maintenance'
+                                : fa.status === 'expired'
+                                  ? 'Expired'
+                                  : 'Unknown'}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500 hidden lg:table-cell">
                         {getAssignedTo(fa)}
                       </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{fa.note || '-'}</td>
                       <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            className="text-slate-400 hover:text-slate-900 transition-colors"
+                        <div className="flex justify-end gap-3">
+                          {fa.status?.toLowerCase() === 'available' && (
+                            <Link
+                              to={`/issuance/issue?firearm_id=${fa.id}`}
+                              className="text-[#135dff] hover:text-[#135dff]/80 transition-colors flex items-center gap-1"
+                              title="Assign Firearm"
+                            >
+                              <ArrowRightLeft className="h-4 w-4" />
+                              <span className="hidden lg:inline text-xs mt-0.5">Assign</span>
+                            </Link>
+                          )}
+                          <Link
+                            to={`/firearms/${fa.id}/edit`}
+                            className="text-slate-400 hover:text-[#135dff] transition-colors flex items-center"
                             title="Edit Firearm Details"
                           >
                             <Edit className="h-5 w-5" />
-                          </button>
-                          <button className="text-slate-400 hover:text-slate-900 transition-colors lg:hidden">
-                            <MoreVertical className="h-5 w-5" />
-                          </button>
+                          </Link>
                         </div>
                       </td>
                     </tr>
@@ -260,14 +283,14 @@ export function FirearmsList() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1 || isLoading}
-                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="relative inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || isLoading}
-                className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="relative ml-3 inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
               >
                 Next
               </button>
@@ -285,7 +308,7 @@ export function FirearmsList() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1 || isLoading}
-                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50"
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                   </button>
@@ -294,7 +317,7 @@ export function FirearmsList() {
                       key={i + 1}
                       onClick={() => setCurrentPage(i + 1)}
                       disabled={isLoading}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold cursor-pointer ${
                         currentPage === i + 1
                           ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
                           : 'text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50'
@@ -306,7 +329,7 @@ export function FirearmsList() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages || isLoading}
-                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50"
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     <ChevronRight className="h-5 w-5" aria-hidden="true" />
                   </button>

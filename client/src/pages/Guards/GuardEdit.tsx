@@ -1,14 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { guardService } from '../../services/guardService';
 import axios from 'axios';
 
-export function GuardAdd() {
+const formatCityName = (name: string) => {
+  if (name.toLowerCase().startsWith('city of ')) {
+    return name.substring(8) + ' City';
+  }
+  return name;
+};
+
+export function GuardEdit() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const [regions, setRegions] = useState<any[]>([]);
@@ -20,14 +29,6 @@ export function GuardAdd() {
   const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
   const [selectedCityCode, setSelectedCityCode] = useState('');
   const [selectedBarangayCode, setSelectedBarangayCode] = useState('');
-
-  useEffect(() => {
-    axios.get('https://psgc.gitlab.io/api/regions/')
-      .then((res) => {
-        setRegions(res.data.sort((a: any, b: any) => a.name.localeCompare(b.name)));
-      })
-      .catch((err) => console.error('Failed to fetch regions:', err));
-  }, []);
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -43,11 +44,120 @@ export function GuardAdd() {
     province: '',
     region: '',
     status: 'unassigned',
-    date_hired: new Date().toISOString().split('T')[0],
+    date_hired: '',
     username: '',
     password: '',
     role: 'guard',
   });
+
+  // Fetch initial regions and guard data
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        // 1. Fetch Regions
+        const regionsRes = await axios.get('https://psgc.gitlab.io/api/regions/');
+        const regionsData = regionsRes.data;
+        const sortedRegions = regionsData.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        setRegions(sortedRegions);
+
+        // 2. Fetch Guard Data
+        if (id) {
+          const guardRes = await guardService.getById(Number(id));
+          const guard = guardRes.data;
+
+          setFormData({
+            first_name: guard.first_name || '',
+            middle_name: guard.middle_name || '',
+            last_name: guard.last_name || '',
+            suffix: guard.suffix || '',
+            guard_id: guard.guard_id || '',
+            cel_num: guard.cel_num || '',
+            email: guard.email || '',
+            street: guard.street || '',
+            barangay: guard.barangay || '',
+            city_or_municipality: guard.city_or_municipality || '',
+            province: guard.province || '',
+            region: guard.region || '',
+            status: guard.status || 'unassigned',
+            date_hired: guard.date_hired || '',
+            username: guard.username || '',
+            password: guard.password || '',
+            role: guard.role || 'guard',
+          });
+
+          // 3. Initiate Reverse Lookup for PSGC Codes based on saved string names
+          let rCode = '';
+          let pCode = '';
+          let cCode = '';
+
+          // Find Region Code
+          if (guard.region) {
+            const r = sortedRegions.find((reg: any) => reg.name === guard.region);
+            if (r) {
+              rCode = r.code;
+              setSelectedRegionCode(rCode);
+
+              // Find Province Code
+              const provsRes = await axios.get(`https://psgc.gitlab.io/api/regions/${rCode}/provinces/`);
+              const provsData = provsRes.data;
+
+              let sortedProvs = [];
+              if (provsData && provsData.length > 0) {
+                sortedProvs = provsData.sort((a: any, b: any) => a.name.localeCompare(b.name));
+              } else {
+                sortedProvs = [{ code: 'NCR_DIRECT', name: 'Metro Manila (Direct)' }];
+              }
+              setProvinces(sortedProvs);
+
+              pCode =
+                sortedProvs.find(
+                  (p: any) =>
+                    p.name === guard.province || (guard.province === 'Metro Manila' && p.code === 'NCR_DIRECT'),
+                )?.code || '';
+              if (pCode) {
+                setSelectedProvinceCode(pCode);
+
+                // Find City Code
+                let citiesRes;
+                if (pCode === 'NCR_DIRECT') {
+                  citiesRes = await axios.get(`https://psgc.gitlab.io/api/regions/${rCode}/cities-municipalities/`);
+                } else {
+                  citiesRes = await axios.get(`https://psgc.gitlab.io/api/provinces/${pCode}/cities-municipalities/`);
+                }
+                const citiesData = citiesRes.data;
+                const formattedCities = citiesData.map((c: any) => ({ ...c, name: formatCityName(c.name) }));
+                const sortedCities = formattedCities.sort((a: any, b: any) => a.name.localeCompare(b.name));
+                setCities(sortedCities);
+
+                cCode = sortedCities.find((c: any) => c.name === guard.city_or_municipality)?.code || '';
+                if (cCode) {
+                  setSelectedCityCode(cCode);
+
+                  // Find Barangay Code
+                  const brgyRes = await axios.get(`https://psgc.gitlab.io/api/cities-municipalities/${cCode}/barangays/`);
+                  const brgyData = brgyRes.data;
+                  const sortedBrgy = brgyData.sort((a: any, b: any) => a.name.localeCompare(b.name));
+                  setBarangays(sortedBrgy);
+
+                  const bCode = sortedBrgy.find((b: any) => b.name === guard.barangay)?.code || '';
+                  if (bCode) {
+                    setSelectedBarangayCode(bCode);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to initialize edit page:', err);
+        setError('Failed to load guard data.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeData();
+  }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -177,35 +287,37 @@ export function GuardAdd() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
+
     setIsSubmitting(true);
     setError(null);
     try {
-      // Basic fallback to ensure required username
       const payload = { ...formData };
       if (!payload.username) {
         payload.username = `${payload.first_name.toLowerCase()}.${payload.last_name.toLowerCase()}`;
       }
 
-      const res = (await guardService.create(payload)) as any;
+      const res = (await guardService.update(Number(id), payload)) as any;
       if (res.success || res.status === 201 || res.status === 200) {
         navigate('/guards');
       } else {
-        setError(res.message || 'Failed to create guard.');
+        setError(res.message || 'Failed to update guard.');
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'An error occurred while creating the guard.');
+      setError(err.response?.data?.message || 'An error occurred while updating the guard.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formatCityName = (name: string) => {
-    if (name.toLowerCase().startsWith('city of ')) {
-      return name.substring(8) + ' City';
-    }
-    return name;
-  };
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -214,8 +326,8 @@ export function GuardAdd() {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Add New Guard</h1>
-          <p className="mt-1 text-sm text-slate-500">Enter personal and employment details to register a new guard.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Edit Guard</h1>
+          <p className="mt-1 text-sm text-slate-500">Update personal and employment details for this guard.</p>
         </div>
       </div>
 
@@ -504,18 +616,15 @@ export function GuardAdd() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="password" className="block text-sm font-medium leading-6 text-slate-900">
-                  System Password *
+                  Password
                 </label>
                 <div className="mt-2">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    required
                     name="password"
                     id="password"
-                    minLength={8}
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Must be at least 8 characters"
                     className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                   />
                 </div>
@@ -550,7 +659,7 @@ export function GuardAdd() {
             className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 flex items-center gap-2 cursor-pointer"
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {isSubmitting ? 'Saving...' : 'Save Guard'}
+            {isSubmitting ? 'Saving...' : 'Update Guard'}
           </button>
         </div>
       </form>

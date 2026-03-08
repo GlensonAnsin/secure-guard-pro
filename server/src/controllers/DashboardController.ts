@@ -14,6 +14,28 @@ class DashboardController {
       next(error);
     }
   }
+
+  /**
+   * Get all dashboard data
+   */
+  public async getDashboardData(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await DashboardService.getDashboardData();
+      return ApiResponse.success(res, data, "Dashboard data retrieved successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async getActivities(req: Request, res: Response, next: NextFunction) {
+    try {
+      const limit = Number(req.query.limit) || 20;
+      const data = await DashboardService.getRecentActivities(limit);
+      return ApiResponse.success(res, data, "Recent activities retrieved successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new DashboardController();

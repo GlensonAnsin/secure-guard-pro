@@ -4,11 +4,13 @@ import FirearmController from '../controllers/FirearmController.js';
 import FirearmIssuanceController from '../controllers/FirearmIssuanceController.js';
 import DesignationController from '../controllers/DesignationController.js';
 import AttendanceController from '../controllers/AttendanceController.js';
+import DashboardController from '../controllers/DashboardController.js';
 import Authentication from '../middlewares/Authentication.js';
 import Validator from '../middlewares/Validator.js';
 import GuardViewController from '../controllers/GuardViewController.js';
 import UserRequest from '../requests/UserRequest.js';
 import AuthController from '../controllers/AuthController.js';
+import RequireAdmin from '../middlewares/RequireAdmin.js';
 // import Limiter from '../middlewares/Limiter.js';
 
 class ApiRoutes {
@@ -30,11 +32,14 @@ class ApiRoutes {
 
     // Protected
     this.router.get('/me', Authentication.handle, AuthController.me);
+    this.router.put('/auth/change-password', Authentication.handle, AuthController.changePassword);
 
-    // Stats
-    this.router.get('/guard-stats', Authentication.handle, GuardsController.getGuardStats);
+    // Dashboard
+    this.router.get('/dashboard-data', Authentication.handle, DashboardController.getDashboardData);
+    this.router.get('/dashboard-activities', Authentication.handle, DashboardController.getActivities);
 
     // Guards
+    this.router.get('/guard-stats', Authentication.handle, GuardsController.getGuardStats);
     this.router.get('/guards', Authentication.handle, GuardsController.index);
     this.router.get('/guards/:id', Authentication.handle, GuardViewController.show);
     this.router.post('/guards', Authentication.handle, Validator.validate(UserRequest.store), GuardsController.store);
@@ -42,18 +47,19 @@ class ApiRoutes {
     this.router.delete('/guards/:id', Authentication.handle, GuardsController.destroy);
 
     // Firearms
-    this.router.get('/firearms', Authentication.handle, FirearmController.index);
-    this.router.get('/firearms/:id', Authentication.handle, FirearmController.show);
-    this.router.post('/firearms', Authentication.handle, FirearmController.store);
-    this.router.put('/firearms/:id', Authentication.handle, FirearmController.update);
-    this.router.delete('/firearms/:id', Authentication.handle, FirearmController.destroy);
+    this.router.get('/firearm-stats', Authentication.handle, RequireAdmin.handle, FirearmController.getFirearmStats);
+    this.router.get('/firearms', Authentication.handle, RequireAdmin.handle, FirearmController.index);
+    this.router.get('/firearms/:id', Authentication.handle, RequireAdmin.handle, FirearmController.show);
+    this.router.post('/firearms', Authentication.handle, RequireAdmin.handle, FirearmController.store);
+    this.router.put('/firearms/:id', Authentication.handle, RequireAdmin.handle, FirearmController.update);
+    this.router.delete('/firearms/:id', Authentication.handle, RequireAdmin.handle, FirearmController.destroy);
 
     // Firearm Issuances
-    this.router.get('/firearm-issuances', Authentication.handle, FirearmIssuanceController.index);
-    this.router.get('/firearm-issuances/:id', Authentication.handle, FirearmIssuanceController.show);
-    this.router.post('/firearm-issuances', Authentication.handle, FirearmIssuanceController.store);
-    this.router.put('/firearm-issuances/:id', Authentication.handle, FirearmIssuanceController.update);
-    this.router.delete('/firearm-issuances/:id', Authentication.handle, FirearmIssuanceController.destroy);
+    this.router.get('/firearm-issuances', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.index);
+    this.router.get('/firearm-issuances/:id', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.show);
+    this.router.post('/firearm-issuances', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.store);
+    this.router.put('/firearm-issuances/:id', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.update);
+    this.router.delete('/firearm-issuances/:id', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.destroy);
 
     // Designations
     this.router.get('/designations', Authentication.handle, DesignationController.index);
@@ -63,6 +69,8 @@ class ApiRoutes {
     this.router.delete('/designations/:id', Authentication.handle, DesignationController.destroy);
 
     // Attendances
+    this.router.get('/attendance-stats', Authentication.handle, AttendanceController.getAttendanceStats);
+    this.router.get('/attendance-export', Authentication.handle, AttendanceController.export);
     this.router.get('/attendances', Authentication.handle, AttendanceController.index);
     this.router.get('/attendances/:id', Authentication.handle, AttendanceController.show);
     this.router.post('/attendances', Authentication.handle, AttendanceController.store);

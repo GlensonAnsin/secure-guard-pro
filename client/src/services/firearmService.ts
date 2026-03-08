@@ -2,8 +2,12 @@
 import api from './api';
 
 export const firearmService = {
-  getAll: async (page = 1, limit = 15) => {
-    return await api.get(`/firearms`, { params: { page, limit } });
+  getStats: async () => {
+    return await api.get('/firearm-stats');
+  },
+
+  getAll: async (page = 1, limit = 15, search = '', status = '') => {
+    return await api.get(`/firearms`, { params: { page, limit, search, status } });
   },
   
   getById: async (id: number) => {

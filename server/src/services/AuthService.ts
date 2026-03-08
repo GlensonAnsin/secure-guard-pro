@@ -116,6 +116,25 @@ class AuthService {
       default: return 7 * 24 * 60 * 60 * 1000;
     }
   }
+
+  /**
+   * Change user password securely.
+   */
+  public async changePassword(userId: number, oldPassword: string, newPassword: string) {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!(await Hash.check(oldPassword, user.password))) {
+      throw new Error('Incorrect current password');
+    }
+
+    user.password = await Hash.make(newPassword);
+    await user.save();
+
+    return { success: true };
+  }
 }
 
 export default new AuthService();

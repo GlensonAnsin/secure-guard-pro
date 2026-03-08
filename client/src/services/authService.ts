@@ -22,5 +22,10 @@ export const authService = {
 
   isAuthenticated: () => {
     return !!localStorage.getItem('accessToken');
+  },
+
+  changePassword: async (oldPassword: string, newPassword: string) => {
+    const response = await api.put('/auth/change-password', { oldPassword, newPassword });
+    return response.data;
   }
 };

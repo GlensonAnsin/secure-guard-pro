@@ -14,7 +14,7 @@ class AttendanceFactory extends Factory<Attendance> {
       time_in: timeIn,
       time_out: faker.datatype.boolean() ? timeOut : null,
       hours_worked: faker.datatype.boolean() ? faker.number.int({ min: 4, max: 12 }) : null,
-      status: faker.helpers.arrayElement(['present', 'absent', 'late', 'half-day']),
+      status: faker.helpers.arrayElement(['present', 'absent', 'late', 'half_day']),
       note: faker.datatype.boolean() ? faker.lorem.sentence() : null,
     };
   }

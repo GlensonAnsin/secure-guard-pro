@@ -2,8 +2,8 @@
 import api from './api';
 
 export const issuanceService = {
-  getAll: async (page = 1, limit = 15) => {
-    return await api.get(`/firearm-issuances`, { params: { page, limit } });
+  getAll: async (page = 1, limit = 15, search = '', status = 'all') => {
+    return await api.get(`/firearm-issuances`, { params: { page, limit, search, status } });
   },
   
   getById: async (id: number) => {
