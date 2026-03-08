@@ -13,7 +13,7 @@ class Paginator {
     model: ModelStatic<T>,
     page: number = 1,
     limit: number = 15,
-    options: FindOptions = {}
+    options: FindOptions & { distinct?: boolean } = {}
   ): Promise<PaginatedResult<T>> {
     const offset = (page - 1) * limit;
 

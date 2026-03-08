@@ -28,6 +28,11 @@ export function GuardAssign() {
       try {
         const res = await guardService.getById(Number(id));
         const guard = res.data;
+        
+        if (guard.status === 'resigned') {
+          setError('This guard has resigned and cannot be assigned to a post.');
+        }
+        
         setGuardName(`${guard.first_name} ${guard.last_name}`);
       } catch (err) {
         console.error('Failed to fetch guard details:', err);
@@ -225,7 +230,7 @@ export function GuardAssign() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!error}
             className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 flex items-center gap-2 cursor-pointer"
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

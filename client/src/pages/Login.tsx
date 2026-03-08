@@ -30,7 +30,7 @@ export function Login() {
     try {
       await authService.login(email, password);
       // Successful login, navigate to dashboard
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
     } finally {

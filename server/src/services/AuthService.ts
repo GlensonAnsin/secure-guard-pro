@@ -16,6 +16,37 @@ class AuthService {
       throw new Error('Invalid credentials');
     }
 
+    if (user.role === 'guard') {
+      throw new Error('Invalid credentials');
+    }
+
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user.id);
+
+    const userResponse = user.toJSON();
+    const { password: _, ...userWithoutPassword } = userResponse;
+
+    return { user: userWithoutPassword, accessToken, refreshToken };
+  }
+
+  /**
+   * Authenticate guard user (mobile app) and return access + refresh tokens.
+   */
+  public async guardLogin(username: string, password: string) {
+    const user = await User.findOne({ where: { username } });
+
+    if (!user || !(await Hash.check(password, user.password))) {
+      throw new Error('Invalid credentials');
+    }
+
+    if (user.role !== 'guard') {
+      throw new Error('Invalid credentials');
+    }
+
+    if (user.status === 'resigned') {
+      throw new Error('This account is no longer active.');
+    }
+
     const accessToken = this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user.id);
 

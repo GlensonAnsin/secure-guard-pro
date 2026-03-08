@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Loader2,
   ArrowRightLeft,
+  Trash2,
+  XCircle,
 } from 'lucide-react';
 import { firearmService } from '../../services/firearmService';
 import { getStatusColor } from '../../lib/statusColor';
@@ -24,11 +26,13 @@ export function FirearmsList() {
   const [issuedCount, setIssuedCount] = useState(0);
   const [availableCount, setAvailableCount] = useState(0);
   const [maintenanceCount, setMaintenanceCount] = useState(0);
+  const [expiredCount, setExpiredCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const itemsPerPage = 10;
 
   const stats = [
@@ -36,6 +40,7 @@ export function FirearmsList() {
     { name: 'Issued', value: issuedCount, icon: ShieldAlert, key: 'issued' },
     { name: 'Available', value: availableCount, icon: CheckCircle2, key: 'available' },
     { name: 'Maintenance', value: maintenanceCount, icon: AlertTriangle, key: 'maintenance' },
+    { name: 'Expired', value: expiredCount, icon: XCircle, key: 'expired' },
   ];
 
   const fetchStats = async () => {
@@ -46,9 +51,28 @@ export function FirearmsList() {
         setIssuedCount(res.data.issued || 0);
         setAvailableCount(res.data.available || 0);
         setMaintenanceCount(res.data.maintenance || 0);
+        setExpiredCount(res.data.expired || 0);
       }
     } catch (error) {
       console.error('Failed to fetch firearm stats:', error);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this firearm? This action cannot be undone.')) {
+      setIsDeleting(id);
+      try {
+        const res = await firearmService.delete(id) as any;
+        if (res.status === 200 || res.success) {
+          fetchFirearms();
+          fetchStats();
+        }
+      } catch (error) {
+        console.error('Failed to delete firearm:', error);
+        alert('Failed to delete firearm. It may have issuance records attached.');
+      } finally {
+        setIsDeleting(null);
+      }
     }
   };
 
@@ -58,6 +82,7 @@ export function FirearmsList() {
     try {
       const res = await firearmService.getAll(currentPage, itemsPerPage, searchQuery, statusFilter);
       if (res.data) {
+        console.log(res.data);
         setFirearms(res.data.data || []);
         setTotalPages(res.data.meta?.last_page || 1);
       }
@@ -107,7 +132,7 @@ export function FirearmsList() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stats.map((stat) => (
           <div key={stat.name} className="overflow-hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between">
@@ -260,6 +285,18 @@ export function FirearmsList() {
                           >
                             <Edit className="h-5 w-5" />
                           </Link>
+                          <button
+                            onClick={() => handleDelete(fa.id)}
+                            disabled={isDeleting === fa.id}
+                            className="text-slate-400 hover:text-red-500 transition-colors flex items-center cursor-pointer disabled:opacity-50"
+                            title="Delete Firearm"
+                          >
+                            {isDeleting === fa.id ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-5 w-5" />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>

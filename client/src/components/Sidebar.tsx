@@ -14,7 +14,7 @@ import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Guards', href: '/guards', icon: Shield },
   { name: 'Attendance', href: '/attendance', icon: Clock },
   { name: 'Firearms', href: '/firearms', icon: Crosshair, adminOnly: true },
@@ -76,7 +76,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               .filter((item) => !item.adminOnly || user?.role === 'admin')
               .map((item) => {
                 const isActive =
-                  location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href));
+                  location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
                 return (
                   <Link
                     key={item.name}

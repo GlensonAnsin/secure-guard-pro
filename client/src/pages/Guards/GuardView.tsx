@@ -1,15 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Clock, Link as LinkIcon, Edit } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Clock, Link as LinkIcon, Edit, X } from 'lucide-react';
 import { guardViewService } from '../../services/guardViewService';
 import { useEffect, useState } from 'react';
 import { getStatusColor } from '../../lib/statusColor';
+import toast from 'react-hot-toast';
 
 export function GuardView() {
   const { id } = useParams();
   const [guard, setGuard] = useState<any | null>(null);
   const [currentAssignment, setCurrentAssignment] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Status Edit Modal State
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     const fetchGuardData = async () => {
@@ -18,10 +24,12 @@ export function GuardView() {
       try {
         const guardRes = await guardViewService.getById(parseInt(id));
         setGuard(guardRes.data);
-        console.log(guardRes.data.designations[guardRes.data.designations.length - 1]);
-
-        if (guardRes.data.designations[guardRes.data.designations.length - 1].status === 'active') {
-          setCurrentAssignment(guardRes.data.designations[guardRes.data.designations.length - 1]);
+        
+        if (guardRes.data?.designations?.length > 0) {
+          const latestDesignation = guardRes.data.designations[guardRes.data.designations.length - 1];
+          if (latestDesignation.status === 'active') {
+             setCurrentAssignment(latestDesignation);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch guard data:', error);
@@ -31,6 +39,29 @@ export function GuardView() {
     };
     fetchGuardData();
   }, [id]);
+
+  const handleUpdateStatus = async () => {
+    if (!id || !selectedStatus) return;
+    setIsUpdatingStatus(true);
+    try {
+      const res = await guardViewService.updateStatus(parseInt(id), selectedStatus);
+      setGuard(res.data);
+      setIsStatusModalOpen(false);
+      toast.success('Guard status updated successfully');
+    } catch (error: any) {
+      console.error('Failed to update status:', error);
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const openStatusModal = () => {
+    if (guard) {
+      setSelectedStatus(guard.status);
+      setIsStatusModalOpen(true);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -63,6 +94,12 @@ export function GuardView() {
     return `${formattedHour.toString().padStart(2, '0')}:${minuteStr} ${ampm}`;
   };
 
+  const statusOptions = [
+    { value: 'on_leave', label: 'On Leave' },
+    { value: 'assigned', label: 'Assigned' },
+    { value: 'resigned', label: 'Resigned' },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -89,20 +126,29 @@ export function GuardView() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {/* Profile Card */}
-        <div className="xl:col-span-1 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit">
-          <div className="bg-slate-50 px-6 py-8 flex flex-col items-center border-b border-slate-200">
+        <div className="xl:col-span-1 border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden h-fit relative">
+          <div className="bg-slate-50 px-6 py-8 flex flex-col items-center border-b border-slate-200 relative">
             <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold mb-4 ring-4 ring-white shadow-sm border border-slate-200">
               {initials}
             </div>
             <h2 className="text-xl font-bold text-slate-900">{fullName}</h2>
             <p className="text-sm font-medium text-slate-500 mt-1">{guard.guard_id || `User-${guard.id}`}</p>
-            <span
-              className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
-                guard.status,
-              )}`}
-            >
-              {guard.status ? guard.status.charAt(0).toUpperCase() + guard.status.slice(1) : 'Unknown'}
-            </span>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
+                  guard.status,
+                )}`}
+              >
+                {guard.status === 'on_leave' ? 'On Leave' : guard.status ? guard.status.charAt(0).toUpperCase() + guard.status.slice(1) : 'Unknown'}
+              </span>
+              <button 
+                onClick={openStatusModal}
+                className="p-1 rounded-full text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors bg-white ring-1 ring-slate-200 cursor-pointer"
+                title="Edit Status"
+              >
+                <Edit className="h-4 w-4" />
+              </button>
+            </div>
           </div>
           <div className="px-6 py-6 space-y-4">
             <div className="flex items-center gap-3 text-sm">
@@ -125,6 +171,12 @@ export function GuardView() {
               <Calendar className="h-5 w-5 text-slate-400" />
               <span className="text-slate-700">Joined Date: {guard.date_hired || 'Not recorded'}</span>
             </div>
+            {guard.termination_date && (
+              <div className="flex items-center gap-3 text-sm">
+                <Calendar className="h-5 w-5 text-red-400" />
+                <span className="text-slate-700">Termination Date: {guard.termination_date}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -262,6 +314,73 @@ export function GuardView() {
           </div>
         </div>
       </div>
+
+      {/* Edit Status Modal */}
+      {isStatusModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">Update Guard Status</h3>
+              <button 
+                onClick={() => setIsStatusModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-1">
+                  Status
+                </label>
+                <select
+                  id="status"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-slate-300 py-2.5 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm shadow-sm ring-1 ring-inset ring-slate-300 bg-white"
+                >
+                  <option value="" disabled>Select a status</option>
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-sm text-slate-500">
+                  Changing the status may affect the guard's ability to log in or use the mobile app.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsStatusModalOpen(false)}
+                className="rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
+                disabled={isUpdatingStatus}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUpdateStatus}
+                disabled={isUpdatingStatus || !selectedStatus || selectedStatus === guard.status}
+                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isUpdatingStatus ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

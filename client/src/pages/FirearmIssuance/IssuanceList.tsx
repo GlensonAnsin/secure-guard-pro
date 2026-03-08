@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ArrowRightLeft, Eye, ChevronLeft, ChevronRight, Loader2, Filter } from 'lucide-react';
+import { Search, Plus, ArrowRightLeft, Eye, ChevronLeft, ChevronRight, Loader2, Filter, Trash2 } from 'lucide-react';
 import { issuanceService } from '../../services/issuanceService';
 
 export function IssuanceList() {
@@ -18,6 +18,7 @@ export function IssuanceList() {
     issueId: null as number | null,
     isProcessing: false,
   });
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const itemsPerPage = 10;
 
   const fetchIssuances = async () => {
@@ -50,14 +51,36 @@ export function IssuanceList() {
         turn_in_date: new Date().toISOString().split('T')[0],
       };
 
-      const res = await issuanceService.update(returnStatus.issueId, payload);
-      if (res.status === 200) {
+      const res = (await issuanceService.update(returnStatus.issueId, payload)) as any;
+      if (res.success || res.status === 200) {
         setReturnStatus({ isOpen: false, issueId: null, isProcessing: false });
         fetchIssuances(); // Refresh the list
+      } else {
+        // Handle potential error message from server
+        console.error('Failed to return firearm:', res.message);
+        setReturnStatus((prev) => ({ ...prev, isProcessing: false }));
+        alert(res.message || 'Failed to return firearm.');
       }
     } catch (err) {
       console.error('Failed to return firearm:', err);
       setReturnStatus((prev) => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this issuance record? This action cannot be undone.')) {
+      setIsDeleting(id);
+      try {
+        const res = await issuanceService.delete(id) as any;
+        if (res.status === 200 || res.success) {
+          fetchIssuances();
+        }
+      } catch (error) {
+        console.error('Failed to delete issuance record:', error);
+        alert('Failed to delete record.');
+      } finally {
+        setIsDeleting(null);
+      }
     }
   };
 
@@ -214,6 +237,18 @@ export function IssuanceList() {
                             title="View Full Log"
                           >
                             <Eye className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(issue.id)}
+                            disabled={isDeleting === issue.id}
+                            className="text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            title="Delete Record"
+                          >
+                            {isDeleting === issue.id ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-5 w-5" />
+                            )}
                           </button>
                         </div>
                       </td>

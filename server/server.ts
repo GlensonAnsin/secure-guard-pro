@@ -22,7 +22,7 @@ const PORT = env.APP_PORT;
 app.use(Maintenance.handle);
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors({
-  origin: env.CORS_ORIGIN,
+  origin: true,
   credentials: true,
 }));
 app.use(compression());

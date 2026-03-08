@@ -5,6 +5,7 @@ import FirearmIssuanceController from '../controllers/FirearmIssuanceController.
 import DesignationController from '../controllers/DesignationController.js';
 import AttendanceController from '../controllers/AttendanceController.js';
 import DashboardController from '../controllers/DashboardController.js';
+import MobileController from '../controllers/MobileController.js';
 import Authentication from '../middlewares/Authentication.js';
 import Validator from '../middlewares/Validator.js';
 import GuardViewController from '../controllers/GuardViewController.js';
@@ -34,6 +35,12 @@ class ApiRoutes {
     this.router.get('/me', Authentication.handle, AuthController.me);
     this.router.put('/auth/change-password', Authentication.handle, AuthController.changePassword);
 
+    // Mobile (Guard App)
+    this.router.post('/mobile/login', AuthController.guardLogin);
+    this.router.get('/mobile/me', Authentication.handle, MobileController.me);
+    this.router.post('/mobile/time-in', Authentication.handle, MobileController.timeIn);
+    this.router.post('/mobile/time-out', Authentication.handle, MobileController.timeOut);
+
     // Dashboard
     this.router.get('/dashboard-data', Authentication.handle, DashboardController.getDashboardData);
     this.router.get('/dashboard-activities', Authentication.handle, DashboardController.getActivities);
@@ -42,6 +49,7 @@ class ApiRoutes {
     this.router.get('/guard-stats', Authentication.handle, GuardsController.getGuardStats);
     this.router.get('/guards', Authentication.handle, GuardsController.index);
     this.router.get('/guards/:id', Authentication.handle, GuardViewController.show);
+    this.router.put('/guards/:id/status', Authentication.handle, GuardViewController.updateStatus);
     this.router.post('/guards', Authentication.handle, Validator.validate(UserRequest.store), GuardsController.store);
     this.router.put('/guards/:id', Authentication.handle, GuardsController.update);
     this.router.delete('/guards/:id', Authentication.handle, GuardsController.destroy);

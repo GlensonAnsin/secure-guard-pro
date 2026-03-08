@@ -13,6 +13,16 @@ class AuthController {
     }
   }
 
+  public async guardLogin(req: Request, res: Response) {
+    try {
+      const { username, password } = req.body;
+      const result = await AuthService.guardLogin(username, password);
+      return ApiResponse.success(res, result, 'Login successful');
+    } catch (error: any) {
+      return ApiResponse.error(res, error.message, 401);
+    }
+  }
+
   public async refresh(req: Request, res: Response) {
     try {
       const { refreshToken } = req.body;

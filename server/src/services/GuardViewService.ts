@@ -45,6 +45,26 @@ class GuardViewService {
 
     return userJSON;
   }
+
+  /**
+   * Update user status by ID.
+   */
+  public async updateUserStatus(id: number, status: string) {
+    const user = await User.findByPk(id);
+    if (!user) return null;
+
+    user.status = status;
+
+    if (status === 'resigned') {
+      user.termination_date = new Date();
+    } else {
+      user.termination_date = null;
+    }
+
+    await user.save();
+
+    return this.getUserById(id);
+  }
 } 
 
 export default new GuardViewService();

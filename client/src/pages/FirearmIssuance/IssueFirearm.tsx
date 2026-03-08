@@ -35,16 +35,19 @@ export function IssueFirearm() {
     setGuards([]); // Clear previous results
     try {
       const res = await guardService.getAll(1, 10, guardSearchQuery, 'all');
-      console.log(res);
       if (res.data) {
-        const foundGuards = res.data.data || [];
+        const allFoundGuards = res.data.data || [];
+        const foundGuards = allFoundGuards.filter((g: any) => g.status !== 'resigned');
         setGuards(foundGuards);
 
-        if (foundGuards.length === 1) {
+        if (allFoundGuards.length > 0 && foundGuards.length === 0) {
+          setError('The matched guard has resigned and cannot be issued a firearm.');
+          setTimeout(() => setError(null), 4000);
+        } else if (foundGuards.length === 1) {
           // Auto-select if exactly 1 match
           setFormData((prev) => ({ ...prev, user_id: foundGuards[0].id.toString() }));
         } else if (foundGuards.length === 0) {
-          setError('No guards found matching your search.');
+          setError('No eligible guards found matching your search.');
           setTimeout(() => setError(null), 3000);
         }
       }

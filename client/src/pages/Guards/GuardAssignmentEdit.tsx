@@ -31,6 +31,11 @@ export function GuardAssignmentEdit() {
         // Fetch Guard Name
         const guardRes = await guardService.getById(Number(guardId));
         const guard = guardRes.data;
+        
+        if (guard.status === 'resigned') {
+          setError('This guard has resigned. You cannot modify their assignment.');
+        }
+
         setGuardName(`${guard.first_name || ''} ${guard.last_name || ''}`.trim());
 
         // Fetch Designation info
@@ -287,7 +292,7 @@ export function GuardAssignmentEdit() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!error}
             className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 flex items-center gap-2 cursor-pointer"
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

@@ -1,4 +1,6 @@
 import Firearm, { FirearmCreationAttributes } from '../models/Firearm.js';
+import FirearmIssuance from '../models/FirearmIssuance.js';
+import User from '../models/User.js';
 import Paginator from '../utils/Paginator.js';
 import { Op } from 'sequelize';
 
@@ -23,6 +25,20 @@ class FirearmService {
     return await Paginator.paginate(Firearm, page, limit, {
       where,
       order: [['id', 'DESC']],
+      distinct: true,
+      include: [
+        {
+          model: FirearmIssuance,
+          as: 'issuances',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'first_name', 'last_name'],
+            },
+          ],
+        },
+      ],
     });
   }
 

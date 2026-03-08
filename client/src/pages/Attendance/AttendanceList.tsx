@@ -14,6 +14,7 @@ import {
   UserX,
   X,
   Edit,
+  Trash2,
 } from 'lucide-react';
 import { attendanceService } from '../../services/attendanceService';
 import { getStatusColor } from '../../lib/statusColor';
@@ -64,6 +65,7 @@ export function AttendanceList() {
   const [editNote, setEditNote] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
   const itemsPerPage = 10;
 
@@ -157,6 +159,23 @@ export function AttendanceList() {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const formattedHour = hour % 12 || 12;
     return `${formattedHour.toString().padStart(2, '0')}:${minuteStr} ${ampm}`;
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this attendance record?')) {
+      setIsDeleting(id);
+      try {
+        const res = await attendanceService.delete(id) as any;
+        if (res.status === 200 || res.success) {
+          fetchAttendance();
+        }
+      } catch (error) {
+        console.error('Failed to delete attendance record:', error);
+        alert('Failed to delete attendance record.');
+      } finally {
+        setIsDeleting(null);
+      }
+    }
   };
 
   return (
@@ -339,12 +358,27 @@ export function AttendanceList() {
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{record.note || '-'}</td>
                     <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                      <button
-                        onClick={() => handleEditClick(record)}
-                        className="text-slate-400 hover:text-[#135dff] transition-colors cursor-pointer"
-                      >
-                        <Edit className="h-5 w-5" />
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleEditClick(record)}
+                          className="text-slate-400 hover:text-[#135dff] transition-colors cursor-pointer"
+                          title="Edit Note"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(record.id)}
+                          disabled={isDeleting === record.id}
+                          className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+                          title="Delete Record"
+                        >
+                          {isDeleting === record.id ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

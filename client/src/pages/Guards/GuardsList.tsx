@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Loader2,
   ShieldBan,
+  Trash2,
 } from 'lucide-react';
 import { guardService } from '../../services/guardService';
 import { getStatusColor } from '../../lib/statusColor';
@@ -31,6 +32,7 @@ export function GuardsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const itemsPerPage = 10;
 
   const stats = [
@@ -78,6 +80,24 @@ export function GuardsList() {
   useEffect(() => {
     fetchGuards();
   }, [fetchGuards]);
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this guard? This action cannot be undone.')) {
+      setIsDeleting(id);
+      try {
+        const res = await guardService.delete(id) as any;
+        if (res.status === 200 || res.success) {
+          fetchGuards();
+          fetchStats();
+        }
+      } catch (error) {
+        console.error('Failed to delete guard:', error);
+        alert('Failed to delete guard. It may be linked to other records.');
+      } finally {
+        setIsDeleting(null);
+      }
+    }
+  };
 
   return (
     <div className="space-y-6 flex flex-col h-full">
@@ -248,6 +268,18 @@ export function GuardsList() {
                         >
                           <Edit className="h-5 w-5" />
                         </Link>
+                        <button
+                          onClick={() => handleDelete(guard.id)}
+                          disabled={isDeleting === guard.id}
+                          className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+                          title="Delete Guard"
+                        >
+                          {isDeleting === guard.id ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-5 w-5" />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>
