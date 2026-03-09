@@ -63,6 +63,42 @@ class MobileService {
   }
 
   /**
+   * Get attendance history for the guard.
+   */
+  public async getAttendances(userId: number) {
+    const user = await User.findByPk(userId, {
+      include: [
+        {
+          model: Designation,
+          as: 'designations',
+          attributes: ['id'],
+        },
+      ],
+    });
+
+    if (!user) throw new Error('Guard not found');
+
+    const userJSON = user.toJSON() as any;
+    const designationIds = userJSON.designations?.map((d: any) => d.id) || [];
+
+    if (designationIds.length === 0) {
+      return [];
+    }
+
+    const attendances = await Attendance.findAll({
+      where: {
+        designation_id: {
+          [Op.in]: designationIds,
+        },
+      },
+      order: [['time_in', 'DESC']],
+      limit: 30, // Get last 30 attendances by default
+    });
+
+    return attendances;
+  }
+
+  /**
    * Time in: create a new attendance record.
    */
   public async timeIn(designationId: number) {

@@ -388,11 +388,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: AppColors.primary,
-    paddingTop: 56,
+    paddingTop: 66,
     paddingBottom: Spacing.xxl,
     paddingHorizontal: Spacing.xxl,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
   },
   headerContent: {
     flexDirection: 'row',
@@ -431,9 +429,9 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
   },
   profileAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 70,
+    height: 70,
+    borderRadius: 70,
     backgroundColor: AppColors.accent,
     justifyContent: 'center',
     alignItems: 'center',
@@ -442,7 +440,7 @@ const styles = StyleSheet.create({
   },
   profileAvatarText: {
     color: AppColors.white,
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xxl,
     fontWeight: FontWeights.bold,
   },
   scrollView: {

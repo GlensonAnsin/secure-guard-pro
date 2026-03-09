@@ -95,6 +95,11 @@ export const authService = {
     return cached ? JSON.parse(cached) : null;
   },
 
+  getAttendances: async (): Promise<Attendance[]> => {
+    const response = await api.get('/mobile/attendances');
+    return response.data;
+  },
+
   timeIn: async (designationId: number): Promise<Attendance> => {
     const response = await api.post('/mobile/time-in', { designation_id: designationId });
     return response.data;

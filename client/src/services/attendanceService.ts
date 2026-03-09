@@ -22,8 +22,8 @@ export const attendanceService = {
     return await api.delete(`/attendances/${id}`);
   },
 
-  getAttendanceStats: async () => {
-    return await api.get(`/attendance-stats`);
+  getAttendanceStats: async (date = '') => {
+    return await api.get(`/attendance-stats`, { params: { date } });
   },
 
   exportReport: async (search = '', status = '', date = '') => {

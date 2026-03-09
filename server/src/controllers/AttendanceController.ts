@@ -121,7 +121,8 @@ class AttendanceController {
    */
   public async getAttendanceStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const stats = await AttendanceService.getAttendanceStats();
+      const date = req.query.date as string;
+      const stats = await AttendanceService.getAttendanceStats(date);
       return ApiResponse.success(res, stats, 'Stats retrieved successfully');
     } catch (error) {
       next(error);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,36 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
+import { authService, Attendance } from '../services/auth';
 import { AppColors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '../constants/theme';
 import { IdCard, User, Phone, Mail, MapPin, Calendar, Building2, Clock, FileText, LogOut, ChevronLeft } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const { user, profile, logout } = useAuth();
   const router = useRouter();
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [loadingAttendances, setLoadingAttendances] = useState(true);
+
+  useEffect(() => {
+    const fetchAttendances = async () => {
+      try {
+        if (user) {
+          const data = await authService.getAttendances();
+          setAttendances(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch attendances:', error);
+      } finally {
+        setLoadingAttendances(false);
+      }
+    };
+
+    fetchAttendances();
+  }, [user]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -42,6 +63,18 @@ export default function ProfileScreen() {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
+    });
+  };
+
+  const formatDateTime = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
     });
   };
 
@@ -167,6 +200,44 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Attendance History */}
+        <Text style={styles.sectionTitle}>Attendance History</Text>
+        <View style={styles.card}>
+          {loadingAttendances ? (
+            <View style={{ padding: Spacing.xl, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={AppColors.primary} />
+            </View>
+          ) : attendances.length > 0 ? (
+            attendances.map((attendance, index) => (
+              <View key={attendance.id}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: Spacing.sm }}>
+                  <View>
+                    <Text style={{ fontSize: FontSizes.md, fontWeight: FontWeights.medium, color: AppColors.textPrimary }}>
+                      In: {formatDateTime(attendance.time_in)}
+                    </Text>
+                    {attendance.time_out && (
+                      <Text style={{ fontSize: FontSizes.sm, color: AppColors.textSecondary, marginTop: 2 }}>
+                        Out: {formatDateTime(attendance.time_out)}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(attendance.status)}20`, paddingHorizontal: Spacing.sm, paddingVertical: 4 }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(attendance.status) }]}>
+                      {attendance.status.replace('_', ' ').toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                {index < attendances.length - 1 && <InfoDivider />}
+              </View>
+            ))
+          ) : (
+            <View style={styles.noDataCard}>
+              <Clock size={32} color={AppColors.textMuted} style={{ marginBottom: Spacing.md }} />
+              <Text style={styles.noDataText}>No Attendance History</Text>
+            </View>
+          )}
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
@@ -260,8 +331,6 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     paddingBottom: Spacing.xxl,
     paddingHorizontal: Spacing.xxl,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
   },
   headerTop: {
     flexDirection: 'row',
@@ -278,7 +347,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
     color: AppColors.white,
   },

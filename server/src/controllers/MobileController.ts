@@ -21,6 +21,23 @@ class MobileController {
   }
 
   /**
+   * Get authenticated guard's attendance history.
+   */
+  public async getAttendances(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return ApiResponse.error(res, 'Unauthorized', 401);
+      }
+
+      const attendances = await MobileService.getAttendances(userId);
+      return ApiResponse.success(res, attendances, 'Attendance history retrieved successfully');
+    } catch (error: any) {
+      return ApiResponse.error(res, error.message, 400);
+    }
+  }
+
+  /**
    * Time in for the guard.
    */
   public async timeIn(req: Request, res: Response, next: NextFunction) {

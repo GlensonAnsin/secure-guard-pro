@@ -123,8 +123,23 @@ class AttendanceService {
   /**
    * Get attendance stats
    */
-  public async getAttendanceStats() {
+  public async getAttendanceStats(date?: string) {
+    const where: any = {};
+    const targetDate = date ? new Date(`${date}T00:00:00.000Z`) : new Date();
+    
+    // Set to start and end of target date
+    const start = new Date(targetDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(targetDate);
+    end.setHours(23, 59, 59, 999);
+
+    where.time_in = {
+      [Op.gte]: start,
+      [Op.lte]: end,
+    };
+
     const stats = await Attendance.findAll({
+      where,
       attributes: [
         [Sequelize.literal("COUNT(CASE WHEN status = 'present' THEN 1 END)"), 'present'],
         [Sequelize.literal("COUNT(CASE WHEN status = 'on_duty' THEN 1 END)"), 'duty'],

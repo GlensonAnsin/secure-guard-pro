@@ -24,7 +24,7 @@ class DatabaseSeeder {
         username: 'admin@secureguard.com',
         password: 'secureguard.admin',
         role: 'admin',
-        status: 'active',
+        status: '',
         street: null,
         barangay: 'Carmen',
         city_or_municipality: 'Cagayan de Oro City',
@@ -43,7 +43,7 @@ class DatabaseSeeder {
         username: 'hr@secureguard.com',
         password: 'secureguard.hr',
         role: 'hr',
-        status: 'active',
+        status: '',
         street: null,
         barangay: 'Carmen',
         city_or_municipality: 'Cagayan de Oro City',
@@ -62,22 +62,29 @@ class DatabaseSeeder {
       const allUsers = [admin, hr, ...users];
       const designations = [];
 
-      for (const user of allUsers.slice(0, 15)) {
+      for (const user of users.slice(0, 15)) {
         const designation = await DesignationFactory.create({
           user_id: user.id,
         });
         designations.push(designation);
+
+        if (designation.status === 'active') {
+           await user.update({ status: 'assigned' });
+        }
       }
 
-      // 5. Create firearm issuances
-      for (let i = 0; i < 10; i++) {
-        const user = allUsers[i % allUsers.length];
-        const firearm = firearms[i % firearms.length];
+      // 5. Create firearm issuances (only for available firearms)
+      const availableFirearms = firearms.filter(f => f.status === 'available');
+      for (let i = 0; i < Math.min(availableFirearms.length, users.length); i++) {
+        const user = users[i];
+        const firearm = availableFirearms[i];
 
         await FirearmIssuanceFactory.create({
           user_id: user.id,
           firearm_id: firearm.id,
         });
+
+        await firearm.update({ status: 'issued' });
       }
 
       // 6. Create attendances for designations

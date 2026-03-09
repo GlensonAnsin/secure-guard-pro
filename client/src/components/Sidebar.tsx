@@ -61,7 +61,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         <div className="flex h-16 shrink-0 items-center justify-between bg-slate-900 px-6 border-b border-black/10 md:justify-center">
           <div className="flex items-center">
             <Shield className="h-8 w-8 text-blue-500" />
-            <span className="ml-3 text-lg font-bold text-white tracking-tight">Secure Guard</span>
+            <span className="ml-3 text-lg font-bold text-white tracking-tight">SecureGuard</span>
           </div>
           <button
             className="md:hidden text-slate-400 hover:text-white p-2 -mr-2 cursor-pointer"

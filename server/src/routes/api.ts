@@ -38,6 +38,7 @@ class ApiRoutes {
     // Mobile (Guard App)
     this.router.post('/mobile/login', AuthController.guardLogin);
     this.router.get('/mobile/me', Authentication.handle, MobileController.me);
+    this.router.get('/mobile/attendances', Authentication.handle, MobileController.getAttendances);
     this.router.post('/mobile/time-in', Authentication.handle, MobileController.timeIn);
     this.router.post('/mobile/time-out', Authentication.handle, MobileController.timeOut);
 

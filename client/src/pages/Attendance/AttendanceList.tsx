@@ -92,7 +92,7 @@ export function AttendanceList() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await attendanceService.getAttendanceStats();
+        const res = await attendanceService.getAttendanceStats(dateFilter);
         if (res.data) {
           setPresentCount(res.data.meta.present || 0);
           setDutyCount(res.data.meta.duty || 0);
@@ -106,7 +106,7 @@ export function AttendanceList() {
       }
     };
     fetchStats();
-  }, []);
+  }, [dateFilter]);
 
   const handleEditClick = (record: any) => {
     setEditingRecord(record);

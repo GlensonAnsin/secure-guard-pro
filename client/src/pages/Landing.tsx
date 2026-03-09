@@ -92,7 +92,7 @@ export function Landing() {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollTo('home')}>
               <Shield className="h-8 w-8 text-blue-600 animate-pulse" />
-              <span className="text-xl font-bold tracking-tight">Secure Guard</span>
+              <span className="text-xl font-bold tracking-tight">SecureGuard</span>
             </div>
             
             {/* Desktop Nav */}
@@ -178,10 +178,10 @@ export function Landing() {
             <RevealOnScroll delay={100} className="mb-10 lg:mb-0">
               <h2 className="text-3xl font-bold text-slate-900 mb-4 flex items-center gap-3">
                 <Target className="h-8 w-8 text-blue-600 animate-bounce" />
-                About Secure Guard Pro
+                About SecureGuard Pro
               </h2>
               <p className="text-lg text-slate-600 mb-6 flex-wrap">
-                Built specifically for modern security agencies, Secure Guard Pro eliminates the friction of paper logs and disconnected tools. Our unified platform empowers administrators and HR teams to maintain rigorous standards with zero overhead.
+                Built specifically for modern security agencies, SecureGuard Pro eliminates the friction of paper logs and disconnected tools. Our unified platform empowers administrators and HR teams to maintain rigorous standards with zero overhead.
               </p>
               <p className="text-lg text-slate-600">
                 With a focus on reliability and absolute data integrity, we help you keep your guards accountable and your assets completely secure.
@@ -256,9 +256,9 @@ export function Landing() {
       <footer className="bg-slate-950 py-12 text-center text-slate-500 text-sm">
         <div className="flex items-center justify-center gap-2 mb-4 hover:text-slate-400 transition-colors cursor-default">
             <Shield className="h-6 w-6 text-slate-700" />
-            <span className="text-lg font-bold text-slate-400 tracking-tight">Secure Guard</span>
+            <span className="text-lg font-bold text-slate-400 tracking-tight">SecureGuard</span>
         </div>
-        <p>&copy; {new Date().getFullYear()} Secure Guard Pro. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} SecureGuard Pro. All rights reserved.</p>
       </footer>
     </div>
   );

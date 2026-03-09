@@ -47,7 +47,7 @@ export function Login() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-slate-900">Sign in to your account</h2>
-        <p className="mt-2 text-center text-sm text-slate-600">Secure Guard Pro Management System</p>
+        <p className="mt-2 text-center text-sm text-slate-600">SecureGuard Pro Management System</p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

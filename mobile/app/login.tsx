@@ -227,11 +227,13 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.bold,
     color: AppColors.textPrimary,
     marginBottom: Spacing.xs,
+    textAlign: 'center',
   },
   cardSubtitle: {
     fontSize: FontSizes.sm,
     color: AppColors.textSecondary,
     marginBottom: Spacing.xxl,
+    textAlign: 'center',
   },
   errorContainer: {
     flexDirection: 'row',
