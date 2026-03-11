@@ -1,9 +1,6 @@
 import { DataTypes } from 'sequelize';
 
 class CreateAttendancesTable {
-  /**
-   * Run the migrations.
-   */
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('attendances', {
       id: {
@@ -36,9 +33,25 @@ class CreateAttendancesTable {
         allowNull: true,
         defaultValue: null,
       },
-      status: {
-        type: DataTypes.STRING(255),
+      is_present: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: false,
+      },
+      is_late: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_early_out: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_on_leave: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
       note: {
         type: DataTypes.TEXT,
@@ -55,14 +68,16 @@ class CreateAttendancesTable {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
+      deleted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      },
     });
 
     await queryInterface.addIndex('attendances', ['designation_id']);
   }
 
-  /**
-   * Reverse the migrations.
-   */
   async down(queryInterface) {
     await queryInterface.dropTable('attendances');
   }

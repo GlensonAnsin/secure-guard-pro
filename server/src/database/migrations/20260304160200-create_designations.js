@@ -1,9 +1,6 @@
 import { DataTypes } from 'sequelize';
 
 class CreateDesignationsTable {
-  /**
-   * Run the migrations.
-   */
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('designations', {
       id: {
@@ -22,13 +19,25 @@ class CreateDesignationsTable {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE',
       },
-      client: {
-        type: DataTypes.STRING(255),
+      company_id: {
+        type: DataTypes.BIGINT,
         allowNull: false,
+        references: {
+          model: 'companies',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
-      address: {
-        type: DataTypes.TEXT,
+      day_start: {
+        type: DataTypes.TINYINT,
         allowNull: false,
+        defaultValue: 1,
+      },
+      day_end: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 5,
       },
       shift_in: {
         type: DataTypes.TIME,
@@ -47,9 +56,25 @@ class CreateDesignationsTable {
         allowNull: true,
         defaultValue: null,
       },
-      status: {
-        type: DataTypes.STRING(255),
+      last_shift_changes: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+        defaultValue: null,
+      },
+      is_active: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true,
+      },
+      is_dismissed: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_completed: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
       note: {
         type: DataTypes.TEXT,
@@ -66,14 +91,17 @@ class CreateDesignationsTable {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
+      deleted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      },
     });
 
     await queryInterface.addIndex('designations', ['user_id']);
+    await queryInterface.addIndex('designations', ['company_id']);
   }
 
-  /**
-   * Reverse the migrations.
-   */
   async down(queryInterface) {
     await queryInterface.dropTable('designations');
   }

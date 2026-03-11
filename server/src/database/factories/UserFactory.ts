@@ -43,7 +43,6 @@ class UserFactory extends Factory<User> {
       middle_name: faker.person.lastName(),
       last_name: faker.person.lastName(),
       suffix: faker.helpers.arrayElement([null, null, null, 'Jr.', 'Sr.', 'III']),
-      role: 'guard',
       street: faker.location.streetAddress(),
       barangay: `Barangay ${faker.number.int({ min: 1, max: 200 })}`,
       city_or_municipality: faker.helpers.arrayElement(phCities),
@@ -53,14 +52,10 @@ class UserFactory extends Factory<User> {
       cel_num: `09${faker.string.numeric(9)}`,
       username: faker.internet.username(),
       password: '$2b$10$YourHashedPasswordHere',
-      status: faker.helpers.arrayElement(['unassigned', 'unassigned', 'on_leave', 'resigned']),
+      is_available: true,
+      is_on_leave: false,
+      is_resigned: false,
       date_hired: faker.date.past({ years: 3 }),
-    };
-  }
-
-  public admin() {
-    return {
-      role: 'admin',
     };
   }
 }

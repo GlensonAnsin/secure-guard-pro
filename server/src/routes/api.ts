@@ -6,13 +6,18 @@ import DesignationController from '../controllers/DesignationController.js';
 import AttendanceController from '../controllers/AttendanceController.js';
 import DashboardController from '../controllers/DashboardController.js';
 import MobileController from '../controllers/MobileController.js';
+import CompanyController from '../controllers/CompanyController.js';
+import ArchiveController from '../controllers/ArchiveController.js';
+import ReportController from '../controllers/ReportController.js';
+import ShiftRotationController from '../controllers/ShiftRotationController.js';
+import UserManagementController from '../controllers/UserManagementController.js';
 import Authentication from '../middlewares/Authentication.js';
 import Validator from '../middlewares/Validator.js';
 import GuardViewController from '../controllers/GuardViewController.js';
 import UserRequest from '../requests/UserRequest.js';
 import AuthController from '../controllers/AuthController.js';
 import RequireAdmin from '../middlewares/RequireAdmin.js';
-// import Limiter from '../middlewares/Limiter.js';
+import RequireAdminOrHR from '../middlewares/RequireAdminOrHR.js';
 
 class ApiRoutes {
   public router: Router;
@@ -22,9 +27,6 @@ class ApiRoutes {
     this.initializeRoutes();
   }
 
-  /**
-   * Define all API routes here.
-   */
   protected initializeRoutes(): void {
     // Auth
     this.router.post('/login', AuthController.login);
@@ -56,16 +58,16 @@ class ApiRoutes {
     this.router.delete('/guards/:id', Authentication.handle, GuardsController.destroy);
 
     // Firearms
-    this.router.get('/firearm-stats', Authentication.handle, RequireAdmin.handle, FirearmController.getFirearmStats);
-    this.router.get('/firearms', Authentication.handle, RequireAdmin.handle, FirearmController.index);
-    this.router.get('/firearms/:id', Authentication.handle, RequireAdmin.handle, FirearmController.show);
+    this.router.get('/firearm-stats', Authentication.handle, RequireAdminOrHR.handle, FirearmController.getFirearmStats);
+    this.router.get('/firearms', Authentication.handle, RequireAdminOrHR.handle, FirearmController.index);
+    this.router.get('/firearms/:id', Authentication.handle, RequireAdminOrHR.handle, FirearmController.show);
     this.router.post('/firearms', Authentication.handle, RequireAdmin.handle, FirearmController.store);
     this.router.put('/firearms/:id', Authentication.handle, RequireAdmin.handle, FirearmController.update);
     this.router.delete('/firearms/:id', Authentication.handle, RequireAdmin.handle, FirearmController.destroy);
 
     // Firearm Issuances
-    this.router.get('/firearm-issuances', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.index);
-    this.router.get('/firearm-issuances/:id', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.show);
+    this.router.get('/firearm-issuances', Authentication.handle, RequireAdminOrHR.handle, FirearmIssuanceController.index);
+    this.router.get('/firearm-issuances/:id', Authentication.handle, RequireAdminOrHR.handle, FirearmIssuanceController.show);
     this.router.post('/firearm-issuances', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.store);
     this.router.put('/firearm-issuances/:id', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.update);
     this.router.delete('/firearm-issuances/:id', Authentication.handle, RequireAdmin.handle, FirearmIssuanceController.destroy);
@@ -85,6 +87,36 @@ class ApiRoutes {
     this.router.post('/attendances', Authentication.handle, AttendanceController.store);
     this.router.put('/attendances/:id', Authentication.handle, AttendanceController.update);
     this.router.delete('/attendances/:id', Authentication.handle, AttendanceController.destroy);
+
+    // Companies
+    this.router.get('/companies', Authentication.handle, CompanyController.index);
+    this.router.get('/companies/:id', Authentication.handle, CompanyController.show);
+    this.router.get('/companies/:id/guards', Authentication.handle, CompanyController.getGuards);
+    this.router.post('/companies', Authentication.handle, RequireAdmin.handle, CompanyController.store);
+    this.router.put('/companies/:id', Authentication.handle, RequireAdmin.handle, CompanyController.update);
+    this.router.delete('/companies/:id', Authentication.handle, RequireAdmin.handle, CompanyController.destroy);
+
+    // Archive (soft-delete management)
+    this.router.get('/archive/:entity', Authentication.handle, RequireAdmin.handle, ArchiveController.index);
+    this.router.post('/archive/:entity/:id/restore', Authentication.handle, RequireAdmin.handle, ArchiveController.restore);
+    this.router.delete('/archive/:entity/:id', Authentication.handle, RequireAdmin.handle, ArchiveController.permanentDelete);
+
+    // Reports
+    this.router.get('/reports/guards', Authentication.handle, RequireAdminOrHR.handle, ReportController.guardReport);
+    this.router.get('/reports/attendance', Authentication.handle, RequireAdminOrHR.handle, ReportController.attendanceReport);
+    this.router.get('/reports/firearms', Authentication.handle, RequireAdminOrHR.handle, ReportController.firearmReport);
+    this.router.get('/reports/companies', Authentication.handle, RequireAdminOrHR.handle, ReportController.companyReport);
+
+    // Shift Rotation
+    this.router.post('/shift-rotation/rotate', Authentication.handle, RequireAdmin.handle, ShiftRotationController.rotate);
+    this.router.post('/shift-rotation/rotate/:companyId', Authentication.handle, RequireAdminOrHR.handle, ShiftRotationController.manualRotate);
+    this.router.get('/shift-rotation/status', Authentication.handle, RequireAdminOrHR.handle, ShiftRotationController.status);
+
+    // User Management (Admin/HR)
+    this.router.get('/users', Authentication.handle, RequireAdmin.handle, UserManagementController.index);
+    this.router.post('/users', Authentication.handle, RequireAdmin.handle, UserManagementController.store);
+    this.router.put('/users/:id', Authentication.handle, RequireAdmin.handle, UserManagementController.update);
+    this.router.delete('/users/:id', Authentication.handle, RequireAdmin.handle, UserManagementController.destroy);
   }
 }
 

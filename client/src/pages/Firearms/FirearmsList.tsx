@@ -18,7 +18,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { firearmService } from '../../services/firearmService';
-import { getStatusColor } from '../../lib/statusColor';
+// getStatusColor removed as per inline refactoring
 
 export function FirearmsList() {
   const [firearms, setFirearms] = useState<any[]>([]);
@@ -248,19 +248,27 @@ export function FirearmsList() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        <span
-                          className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(fa.status)}`}
-                        >
-                          {fa.status === 'available'
-                            ? 'Available'
-                            : fa.status === 'issued'
-                              ? 'Issued'
-                              : fa.status === 'maintenance'
-                                ? 'Maintenance'
-                                : fa.status === 'expired'
-                                  ? 'Expired'
-                                  : 'Unknown'}
-                        </span>
+                        {fa.status === 'available' ? (
+                          <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                            Available
+                          </span>
+                        ) : fa.status === 'issued' ? (
+                          <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                            Issued
+                          </span>
+                        ) : fa.status === 'maintenance' ? (
+                          <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                            Maintenance
+                          </span>
+                        ) : fa.status === 'expired' ? (
+                          <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                            Expired
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                            {fa.status || 'Unknown'}
+                          </span>
+                        )}
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500 hidden lg:table-cell">
                         {getAssignedTo(fa)}

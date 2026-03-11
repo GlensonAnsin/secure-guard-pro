@@ -8,6 +8,11 @@ import {
   Settings as SettingsIcon,
   LogOut,
   X,
+  Building2,
+  Archive,
+  BarChart3,
+  RefreshCw,
+  Users,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { authService } from '../services/authService';
@@ -16,9 +21,14 @@ import { useNavigate } from 'react-router-dom';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Guards', href: '/guards', icon: Shield },
+  { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Attendance', href: '/attendance', icon: Clock },
-  { name: 'Firearms', href: '/firearms', icon: Crosshair, adminOnly: true },
-  { name: 'Firearm Issuance', href: '/issuance', icon: FileCheck, adminOnly: true },
+  { name: 'Firearms', href: '/firearms', icon: Crosshair, adminOrHR: true },
+  { name: 'Firearm Issuance', href: '/issuance', icon: FileCheck, adminOrHR: true },
+  { name: 'Reports', href: '/reports', icon: BarChart3, adminOrHR: true },
+  { name: 'Shift Rotation', href: '/shift-rotation', icon: RefreshCw, adminOrHR: true },
+  { name: 'Users', href: '/user-management', icon: Users, adminOnly: true },
+  { name: 'Archive', href: '/archive', icon: Archive, adminOnly: true },
   { name: 'Settings', href: '/settings', icon: SettingsIcon },
 ];
 
@@ -31,6 +41,8 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const user = authService.getCurrentUser();
+  const isAdmin = authService.isAdmin();
+  const isAdminOrHR = authService.isAdminOrHR();
 
   const userName = user?.first_name + ' ' + user?.last_name;
   const userEmail = user?.email;
@@ -38,6 +50,12 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
+  };
+
+  const shouldShowItem = (item: (typeof navigation)[number]) => {
+    if ('adminOnly' in item && item.adminOnly) return isAdmin;
+    if ('adminOrHR' in item && item.adminOrHR) return isAdminOrHR;
+    return true;
   };
 
   return (
@@ -73,7 +91,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         <div className="flex flex-1 flex-col overflow-y-auto pt-6">
           <nav className="flex-1 space-y-1 px-3">
             {navigation
-              .filter((item) => !item.adminOnly || user?.role === 'admin')
+              .filter(shouldShowItem)
               .map((item) => {
                 const isActive =
                   location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
@@ -103,7 +121,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         <div className="p-4 border-t border-black/10">
           <div className="flex items-center gap-3 rounded-lg p-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
-              {user?.first_name[0] + user?.last_name[0]}
+              {user?.first_name?.[0]}{user?.last_name?.[0]}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium text-[#333] truncate">{userName}</span>

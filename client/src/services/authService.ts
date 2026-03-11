@@ -24,6 +24,23 @@ export const authService = {
     return !!localStorage.getItem('accessToken');
   },
 
+  hasRole: (role: string): boolean => {
+    const user = authService.getCurrentUser();
+    return user?.roles?.includes(role) || false;
+  },
+
+  isAdmin: (): boolean => {
+    return authService.hasRole('admin');
+  },
+
+  isHR: (): boolean => {
+    return authService.hasRole('hr');
+  },
+
+  isAdminOrHR: (): boolean => {
+    return authService.isAdmin() || authService.isHR();
+  },
+
   changePassword: async (oldPassword: string, newPassword: string) => {
     const response = await api.put('/auth/change-password', { oldPassword, newPassword });
     return response.data;

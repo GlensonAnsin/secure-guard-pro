@@ -56,7 +56,16 @@ class AttendanceController {
         
         const cleanNote = record.note ? record.note.replace(/"/g, '""').replace(/\n/g, ' ') : '';
         
-        csv += `"${dateStr}","${guardId}","${guardName}","${location}","${timeInStr}","${timeOutStr}","${record.hours_worked || ''}","${record.status}","${cleanNote}"\n`;
+        // Build multi-status label from booleans
+        const statuses: string[] = [];
+        if (record.is_present) statuses.push('Present');
+        if (record.is_late) statuses.push('Late');
+        if (record.is_early_out) statuses.push('Early Out');
+        if (record.is_on_leave) statuses.push('On Leave');
+        if (statuses.length === 0 && !record.time_out) statuses.push('On Duty');
+        const statusStr = statuses.join(', ');
+
+        csv += `"${dateStr}","${guardId}","${guardName}","${location}","${timeInStr}","${timeOutStr}","${record.hours_worked || ''}","${statusStr}","${cleanNote}"\n`;
       });
 
       res.header('Content-Type', 'text/csv');

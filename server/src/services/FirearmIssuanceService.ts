@@ -50,10 +50,10 @@ class FirearmIssuanceService {
     const transaction = await Database.sequelize.transaction();
     try {
       const issuance = await FirearmIssuance.create(data, { transaction });
-      
+
       const firearm = await Firearm.findByPk(data.firearm_id, { transaction });
       if (firearm) {
-        await firearm.update({ status: 'issued' }, { transaction });
+        await firearm.update({ is_available: false }, { transaction });
       }
 
       await transaction.commit();
@@ -70,20 +70,20 @@ class FirearmIssuanceService {
   public async updateIssuance(id: number, data: Partial<FirearmIssuanceCreationAttributes>) {
     const issuance = await FirearmIssuance.findByPk(id);
     if (!issuance) throw new Error('Firearm issuance not found');
-    
+
     // If not returning, just do a normal update
     if (!data.turn_in_date) {
       return await issuance.update(data);
     }
 
-    // If providing a turn_in_date, we need to return the firearm to available status atomically
+    // If providing a turn_in_date, return the firearm to available status atomically
     const transaction = await Database.sequelize.transaction();
     try {
       const updatedIssuance = await issuance.update(data, { transaction });
-      
+
       const firearm = await Firearm.findByPk(issuance.firearm_id, { transaction });
       if (firearm) {
-        await firearm.update({ status: 'available' }, { transaction });
+        await firearm.update({ is_available: true }, { transaction });
       }
 
       await transaction.commit();

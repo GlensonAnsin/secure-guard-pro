@@ -1,9 +1,6 @@
 import { DataTypes } from 'sequelize';
 
 class CreateUserTable {
-  /**
-   * Run the migrations.
-   */
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('users', {
       id: {
@@ -33,10 +30,6 @@ class CreateUserTable {
         type: DataTypes.STRING(5),
         allowNull: true,
         defaultValue: null,
-      },
-      role: {
-        type: DataTypes.STRING(10),
-        allowNull: false,
       },
       street: {
         type: DataTypes.STRING(255),
@@ -71,14 +64,26 @@ class CreateUserTable {
       username: {
         type: DataTypes.STRING(255),
         allowNull: false,
+        unique: true,
       },
       password: {
         type: DataTypes.STRING(255),
         allowNull: false,
       },
-      status: {
-        type: DataTypes.STRING(255),
+      is_available: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true,
+      },
+      is_on_leave: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_resigned: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
       date_hired: {
         type: DataTypes.DATEONLY,
@@ -107,10 +112,7 @@ class CreateUserTable {
     });
   }
 
-  /**
-   * Reverse the migrations.
-   */
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface) {
     await queryInterface.dropTable('users');
   }
 }

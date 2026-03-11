@@ -9,7 +9,7 @@ export function Dashboard() {
   const [dashboardStats, setDashboardStats] = useState([
     { name: 'Total Guards', value: '0', icon: Users, change: '0%', changeType: 'neutral' },
     { name: 'Assigned', value: '0', icon: ShieldCheck, change: '0%', changeType: 'neutral' },
-    { name: 'Unassigned', value: '0', icon: Clock, change: '0%', changeType: 'neutral' },
+    { name: 'Available', value: '0', icon: Clock, change: '0%', changeType: 'neutral' },
     { name: 'On Leave', value: '0', icon: UserX, change: '0%', changeType: 'neutral' },
   ]);
 
@@ -61,8 +61,8 @@ export function Dashboard() {
             changeType: 'neutral',
           },
           {
-            name: 'Unassigned',
-            value: gStats.unassigned?.toString() || '0',
+            name: 'Available',
+            value: gStats.available?.toString() || '0',
             icon: Clock,
             change: '',
             changeType: 'neutral',

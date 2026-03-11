@@ -9,9 +9,10 @@ interface FirearmIssuanceAttributes {
   note: string | null;
   created_at?: Date;
   updated_at?: Date;
+  deleted_at?: Date | null;
 }
 
-export interface FirearmIssuanceCreationAttributes extends Optional<FirearmIssuanceAttributes, 'id' | 'turn_in_date' | 'note' | 'created_at' | 'updated_at'> {}
+export interface FirearmIssuanceCreationAttributes extends Optional<FirearmIssuanceAttributes, 'id' | 'turn_in_date' | 'note' | 'created_at' | 'updated_at' | 'deleted_at'> {}
 
 class FirearmIssuance extends Model<FirearmIssuanceAttributes, FirearmIssuanceCreationAttributes> implements FirearmIssuanceAttributes {
   declare id: number;
@@ -22,6 +23,7 @@ class FirearmIssuance extends Model<FirearmIssuanceAttributes, FirearmIssuanceCr
   declare note: string | null;
   declare created_at: Date;
   declare updated_at: Date;
+  declare deleted_at?: Date | null;
 
   static initModel(sequelize: Sequelize) {
     FirearmIssuance.init(
@@ -58,6 +60,7 @@ class FirearmIssuance extends Model<FirearmIssuanceAttributes, FirearmIssuanceCr
         sequelize,
         modelName: 'FirearmIssuance',
         tableName: 'firearm_issuances',
+        paranoid: true,
         timestamps: true,
         underscored: true,
       }

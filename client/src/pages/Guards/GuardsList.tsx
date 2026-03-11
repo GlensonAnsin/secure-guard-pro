@@ -18,13 +18,12 @@ import {
   Trash2,
 } from 'lucide-react';
 import { guardService } from '../../services/guardService';
-import { getStatusColor } from '../../lib/statusColor';
 
 export function GuardsList() {
   const [guards, setGuards] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [assignedCount, setAssignedCount] = useState(0);
-  const [unassignedCount, setUnassignedCount] = useState(0);
+  const [availableCount, setAvailableCount] = useState(0);
   const [onLeaveCount, setOnLeaveCount] = useState(0);
   const [resignedCount, setResignedCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +37,7 @@ export function GuardsList() {
   const stats = [
     { name: 'Total Guards', value: totalCount, icon: Users, key: 'total' },
     { name: 'Assigned', value: assignedCount, icon: ShieldCheck, key: 'assigned' },
-    { name: 'Unassigned', value: unassignedCount, icon: Clock, key: 'unassigned' },
+    { name: 'Available', value: availableCount, icon: Clock, key: 'available' },
     { name: 'On Leave', value: onLeaveCount, icon: UserX, key: 'on_leave' },
     { name: 'Resigned', value: resignedCount, icon: ShieldBan, key: 'resigned' },
   ];
@@ -49,7 +48,7 @@ export function GuardsList() {
       if (res.data) {
         setTotalCount(res.data.meta.total);
         setAssignedCount(res.data.meta.assigned);
-        setUnassignedCount(res.data.meta.unassigned);
+        setAvailableCount(res.data.meta.available);
         setOnLeaveCount(res.data.meta.on_leave);
         setResignedCount(res.data.meta.resigned);
       }
@@ -161,7 +160,7 @@ export function GuardsList() {
               >
                 <option value="all">All Statuses</option>
                 <option value="assigned">Assigned</option>
-                <option value="unassigned">Unassigned</option>
+                <option value="available">Available</option>
                 <option value="on_leave">On Leave</option>
                 <option value="resigned">Resigned</option>
               </select>
@@ -238,19 +237,23 @@ export function GuardsList() {
                       {guard.date_hired || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(guard.status)}`}
-                      >
-                        {guard.status === 'assigned'
-                          ? 'Assigned'
-                          : guard.status === 'unassigned'
-                            ? 'Unassigned'
-                            : guard.status === 'on_leave'
-                              ? 'On Leave'
-                              : guard.status === 'resigned'
-                                ? 'Resigned'
-                                : 'Unknown'}
-                      </span>
+                      {guard.is_resigned ? (
+                        <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                          Resigned
+                        </span>
+                      ) : guard.is_on_leave ? (
+                        <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                          On Leave
+                        </span>
+                      ) : guard.is_available ? (
+                        <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                          Available
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                          Assigned
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                       <div className="flex justify-end gap-2">

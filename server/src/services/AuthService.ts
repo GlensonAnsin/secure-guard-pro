@@ -1,11 +1,24 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
+import Role from '../models/Role.js';
+import UserRole from '../models/UserRole.js';
 import RefreshToken from '../models/RefreshToken.js';
 import Hash from '../utils/Hash.js';
 import env from '../config/env.js';
 
 class AuthService {
+  /**
+   * Get user roles as an array of slugs.
+   */
+  private async getUserRoles(userId: number): Promise<string[]> {
+    const userRoles = await UserRole.findAll({
+      where: { user_id: userId },
+      include: [{ model: Role, as: 'role' }],
+    });
+    return userRoles.map((ur: any) => ur.role?.slug).filter(Boolean);
+  }
+
   /**
    * Authenticate user and return access + refresh tokens.
    */
@@ -16,17 +29,24 @@ class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    if (user.role === 'guard') {
+    const roles = await this.getUserRoles(user.id);
+
+    // Guards cannot log in via web
+    if (roles.length === 1 && roles.includes('guard')) {
       throw new Error('Invalid credentials');
     }
 
-    const accessToken = this.generateAccessToken(user);
+    if (user.is_resigned) {
+      throw new Error('This account is no longer active.');
+    }
+
+    const accessToken = this.generateAccessToken(user, roles);
     const refreshToken = await this.generateRefreshToken(user.id);
 
     const userResponse = user.toJSON();
     const { password: _, ...userWithoutPassword } = userResponse;
 
-    return { user: userWithoutPassword, accessToken, refreshToken };
+    return { user: { ...userWithoutPassword, roles }, accessToken, refreshToken };
   }
 
   /**
@@ -39,21 +59,23 @@ class AuthService {
       throw new Error('Invalid credentials');
     }
 
-    if (user.role !== 'guard') {
+    const roles = await this.getUserRoles(user.id);
+
+    if (!roles.includes('guard')) {
       throw new Error('Invalid credentials');
     }
 
-    if (user.status === 'resigned') {
+    if (user.is_resigned) {
       throw new Error('This account is no longer active.');
     }
 
-    const accessToken = this.generateAccessToken(user);
+    const accessToken = this.generateAccessToken(user, roles);
     const refreshToken = await this.generateRefreshToken(user.id);
 
     const userResponse = user.toJSON();
     const { password: _, ...userWithoutPassword } = userResponse;
 
-    return { user: userWithoutPassword, accessToken, refreshToken };
+    return { user: { ...userWithoutPassword, roles }, accessToken, refreshToken };
   }
 
   /**
@@ -69,7 +91,6 @@ class AuthService {
     }
 
     if (new Date() > storedToken.expires_at) {
-      // Revoke expired token
       storedToken.revoked = true;
       await storedToken.save();
       throw new Error('Refresh token has expired');
@@ -80,7 +101,8 @@ class AuthService {
       throw new Error('User not found');
     }
 
-    const accessToken = this.generateAccessToken(user);
+    const roles = await this.getUserRoles(user.id);
+    const accessToken = this.generateAccessToken(user, roles);
 
     return { accessToken };
   }
@@ -102,9 +124,9 @@ class AuthService {
   /**
    * Generate a short-lived access token.
    */
-  private generateAccessToken(user: User): string {
+  private generateAccessToken(user: User, roles: string[]): string {
     return jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, roles },
       env.JWT_SECRET,
       { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions
     );
@@ -116,7 +138,6 @@ class AuthService {
   private async generateRefreshToken(userId: number): Promise<string> {
     const token = crypto.randomBytes(64).toString('hex');
 
-    // Parse refresh token expiry to milliseconds
     const expiresIn = this.parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
     const expiresAt = new Date(Date.now() + expiresIn);
 
@@ -134,7 +155,7 @@ class AuthService {
    */
   private parseExpiry(expiry: string): number {
     const match = expiry.match(/^(\d+)([dhms])$/);
-    if (!match) return 7 * 24 * 60 * 60 * 1000; // default 7 days
+    if (!match) return 7 * 24 * 60 * 60 * 1000;
 
     const value = parseInt(match[1]);
     const unit = match[2];

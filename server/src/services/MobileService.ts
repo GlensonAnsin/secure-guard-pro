@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import Designation from '../models/Designation.js';
+import Company from '../models/Company.js';
 import Attendance from '../models/Attendance.js';
 import { Op } from 'sequelize';
 
@@ -14,8 +15,11 @@ class MobileService {
         {
           model: Designation,
           as: 'designations',
-          where: { status: 'active' },
+          where: { is_active: true },
           required: false,
+          include: [
+            { model: Company, as: 'company' },
+          ],
         },
       ],
     });
@@ -46,7 +50,6 @@ class MobileService {
         middle_name: userJSON.middle_name,
         last_name: userJSON.last_name,
         suffix: userJSON.suffix,
-        role: userJSON.role,
         street: userJSON.street,
         barangay: userJSON.barangay,
         city_or_municipality: userJSON.city_or_municipality,
@@ -54,7 +57,9 @@ class MobileService {
         region: userJSON.region,
         email: userJSON.email,
         cel_num: userJSON.cel_num,
-        status: userJSON.status,
+        is_available: userJSON.is_available,
+        is_on_leave: userJSON.is_on_leave,
+        is_resigned: userJSON.is_resigned,
         date_hired: userJSON.date_hired,
       },
       designation: activeDesignation,
@@ -92,7 +97,7 @@ class MobileService {
         },
       },
       order: [['time_in', 'DESC']],
-      limit: 30, // Get last 30 attendances by default
+      limit: 30,
     });
 
     return attendances;
@@ -114,10 +119,26 @@ class MobileService {
       throw new Error('You are already timed in. Please time out first.');
     }
 
+    // Check if late based on designation shift_in
+    const designation = await Designation.findByPk(designationId);
+    let isLate = false;
+    if (designation) {
+      const now = new Date();
+      const [shiftInH, shiftInM] = designation.shift_in.split(':').map(Number);
+      const shiftInDate = new Date(now);
+      shiftInDate.setHours(shiftInH, shiftInM, 0, 0);
+
+      // Late if timed in more than 15 minutes after shift start
+      const diffMinutes = (now.getTime() - shiftInDate.getTime()) / (1000 * 60);
+      if (diffMinutes > 15) {
+        isLate = true;
+      }
+    }
+
     const attendance = await Attendance.create({
       designation_id: designationId,
       time_in: new Date(),
-      status: 'on_duty',
+      is_late: isLate,
     });
 
     return attendance;
@@ -137,16 +158,14 @@ class MobileService {
     const diffMs = timeOut.getTime() - timeIn.getTime();
     const hoursWorked = Math.round(diffMs / (1000 * 60 * 60) * 100) / 100;
 
-    // Determine status based on hours worked
-    let status = 'present';
-    if (hoursWorked < 4) {
-      status = 'half_day';
-    }
+    // Check if early out (less than 6 hours)
+    const isEarlyOut = hoursWorked < 6;
 
     await attendance.update({
       time_out: timeOut,
       hours_worked: hoursWorked,
-      status,
+      is_present: true,
+      is_early_out: isEarlyOut,
     });
 
     return attendance;
@@ -154,8 +173,6 @@ class MobileService {
 
   /**
    * Sync daily attendance for the guard.
-   * If the guard is on leave, create an on_leave record for today.
-   * If the guard missed their shift, create an absent record.
    */
   private async syncDailyAttendance(user: any, designation: any) {
     if (!designation) return;
@@ -175,14 +192,13 @@ class MobileService {
 
     // Handle overnight shifts
     if (shiftInH > shiftOutH || (shiftInH === shiftOutH && shiftInM > shiftOutM)) {
-      if (now.getHours() < shiftInH) { // Shift started yesterday
+      if (now.getHours() < shiftInH) {
         start.setDate(start.getDate() - 1);
-      } else { // Shift ends tomorrow
+      } else {
         end.setDate(end.getDate() + 1);
       }
     }
 
-    // Determine the start and end of the day for the shift start
     const shiftStartStartOfDay = new Date(start);
     shiftStartStartOfDay.setHours(0, 0, 0, 0);
     const shiftStartEndOfDay = new Date(start);
@@ -198,23 +214,24 @@ class MobileService {
     });
 
     if (!existingAttendance) {
-      if (user.status === 'on_leave') {
+      if (user.is_on_leave) {
         // Create on_leave attendance
         await Attendance.create({
           designation_id: designation.id,
           time_in: start,
           time_out: end,
           hours_worked: 0,
-          status: 'on_leave',
+          is_on_leave: true,
         });
       } else if (now > end) {
-        // Shift has ended and guard never timed in
+        // Shift has ended and guard never timed in — absent
         await Attendance.create({
           designation_id: designation.id,
           time_in: start,
           time_out: end,
           hours_worked: 0,
-          status: 'absent',
+          is_present: false,
+          is_late: false,
         });
       }
     }

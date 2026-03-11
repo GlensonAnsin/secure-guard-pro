@@ -1,9 +1,6 @@
 import { DataTypes } from 'sequelize';
 
 class CreateFirearmIssuancesTable {
-  /**
-   * Run the migrations.
-   */
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('firearm_issuances', {
       id: {
@@ -56,15 +53,17 @@ class CreateFirearmIssuancesTable {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
+      deleted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      },
     });
 
     await queryInterface.addIndex('firearm_issuances', ['user_id']);
     await queryInterface.addIndex('firearm_issuances', ['firearm_id']);
   }
 
-  /**
-   * Reverse the migrations.
-   */
   async down(queryInterface) {
     await queryInterface.dropTable('firearm_issuances');
   }

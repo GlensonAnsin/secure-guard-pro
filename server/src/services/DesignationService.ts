@@ -1,5 +1,6 @@
 import Designation, { DesignationCreationAttributes } from '../models/Designation.js';
 import User from '../models/User.js';
+import Company from '../models/Company.js';
 import Paginator from '../utils/Paginator.js';
 
 class DesignationService {
@@ -11,6 +12,7 @@ class DesignationService {
       where: userId ? { user_id: userId } : {},
       include: [
         { model: User, as: 'user', attributes: { exclude: ['password'] } },
+        { model: Company, as: 'company' },
       ],
       order: [['id', 'DESC']],
     });
@@ -23,6 +25,7 @@ class DesignationService {
     return await Designation.findByPk(id, {
       include: [
         { model: User, as: 'user', attributes: { exclude: ['password'] } },
+        { model: Company, as: 'company' },
       ],
     });
   }

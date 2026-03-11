@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, Clock, Link as LinkIcon, Edit, X } from 'lucide-react';
 import { guardViewService } from '../../services/guardViewService';
 import { useEffect, useState } from 'react';
-import { getStatusColor } from '../../lib/statusColor';
 import toast from 'react-hot-toast';
 
 export function GuardView() {
@@ -135,11 +134,25 @@ export function GuardView() {
             <p className="text-sm font-medium text-slate-500 mt-1">{guard.guard_id || `User-${guard.id}`}</p>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
-                  guard.status,
-                )}`}
+                className="inline-flex items-center rounded-full text-xs font-medium"
               >
-                {guard.status === 'on_leave' ? 'On Leave' : guard.status ? guard.status.charAt(0).toUpperCase() + guard.status.slice(1) : 'Unknown'}
+                {guard.is_resigned ? (
+                  <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                    Resigned
+                  </span>
+                ) : guard.is_on_leave ? (
+                  <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                    On Leave
+                  </span>
+                ) : guard.is_available ? (
+                  <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                    Available
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                    Assigned
+                  </span>
+                )}
               </span>
               <button 
                 onClick={openStatusModal}
@@ -160,11 +173,9 @@ export function GuardView() {
               <span className="text-slate-700">{guard.email || 'No email address'}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <MapPin className="h-5 w-5 text-slate-400" />
+              <MapPin className="text-slate-400" />
               <span className="text-slate-700">
-                {guard.barangay && guard.city_or_municipality
-                  ? `${guard.street || ''}, ${guard.barangay}, ${guard.city_or_municipality}, ${guard.province}, ${guard.region}`
-                  : 'Address unassigned'}
+                {`${guard.street || ''}, ${guard.barangay}, ${guard.city_or_municipality}, ${guard.province}, ${guard.region}`}
               </span>
             </div>
             <div className="flex items-center gap-3 text-sm">
@@ -284,17 +295,19 @@ export function GuardView() {
                           {designation.date_of_dismissal || '-'}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
-                          <span
-                            className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
-                              designation.status,
-                            )}`}
-                          >
-                            {designation.status === 'active'
-                              ? 'Active'
-                              : designation.status === 'completed'
-                                ? 'Completed'
-                                : 'Dismissed'}
-                          </span>
+                          {designation.is_dismissed ? (
+                            <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                              Dismissed
+                            </span>
+                          ) : designation.is_completed ? (
+                            <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-600/20">
+                              Completed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                              Active
+                            </span>
+                          )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
                           {designation.note || '-'}

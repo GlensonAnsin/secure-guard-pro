@@ -8,7 +8,6 @@ interface UserAttributes {
   middle_name: string | null;
   last_name: string;
   suffix: string | null;
-  role: string;
   street: string | null;
   barangay: string;
   city_or_municipality: string;
@@ -18,7 +17,9 @@ interface UserAttributes {
   cel_num: string | null;
   username: string;
   password: string;
-  status: string;
+  is_available: boolean;
+  is_on_leave: boolean;
+  is_resigned: boolean;
   date_hired: Date;
   termination_date: Date | null;
   created_at?: Date;
@@ -26,7 +27,7 @@ interface UserAttributes {
   deleted_at?: Date | null;
 }
 
-export interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'suffix' | 'created_at' | 'updated_at' | 'deleted_at'> {}
+export interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'suffix' | 'is_available' | 'is_on_leave' | 'is_resigned' | 'created_at' | 'updated_at' | 'deleted_at'> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   declare id: number;
@@ -35,7 +36,6 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare middle_name: string | null;
   declare last_name: string;
   declare suffix: string | null;
-  declare role: string;
   declare street: string | null;
   declare barangay: string;
   declare city_or_municipality: string;
@@ -45,12 +45,18 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare cel_num: string | null;
   declare username: string;
   declare password: string;
-  declare status: string;
+  declare is_available: boolean;
+  declare is_on_leave: boolean;
+  declare is_resigned: boolean;
   declare date_hired: Date;
   declare termination_date: Date | null;
   declare created_at: Date;
   declare updated_at: Date;
   declare deleted_at?: Date | null;
+
+  // Virtual field populated via includes
+  declare userRoles?: any[];
+  declare roles?: any[];
 
   static initModel(sequelize: Sequelize) {
     User.init(
@@ -81,10 +87,6 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
           type: DataTypes.STRING(5),
           allowNull: true,
           defaultValue: null,
-        },
-        role: {
-          type: DataTypes.STRING(10),
-          allowNull: false,
         },
         street: {
           type: DataTypes.STRING(255),
@@ -119,14 +121,26 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
         username: {
           type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
         password: {
           type: DataTypes.STRING(255),
           allowNull: false,
         },
-        status: {
-          type: DataTypes.STRING(255),
+        is_available: {
+          type: DataTypes.BOOLEAN,
           allowNull: false,
+          defaultValue: true,
+        },
+        is_on_leave: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+        is_resigned: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
         },
         date_hired: {
           type: DataTypes.DATEONLY,
@@ -168,6 +182,16 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
     User.hasMany(models.FirearmIssuance, {
       foreignKey: 'user_id',
       as: 'firearmIssuances',
+    });
+    User.hasMany(models.UserRole, {
+      foreignKey: 'user_id',
+      as: 'userRoles',
+    });
+    User.belongsToMany(models.Role, {
+      through: models.UserRole,
+      foreignKey: 'user_id',
+      otherKey: 'role_id',
+      as: 'roles',
     });
   }
 }

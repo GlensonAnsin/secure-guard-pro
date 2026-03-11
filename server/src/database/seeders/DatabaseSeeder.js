@@ -3,6 +3,9 @@ import FirearmFactory from '../factories/FirearmFactory.js';
 import FirearmIssuanceFactory from '../factories/FirearmIssuanceFactory.js';
 import DesignationFactory from '../factories/DesignationFactory.js';
 import AttendanceFactory from '../factories/AttendanceFactory.js';
+import CompanyFactory from '../factories/CompanyFactory.js';
+import Role from '../../models/Role.js';
+import UserRole from '../../models/UserRole.js';
 import Logger from '../../utils/Logger.js';
 
 class DatabaseSeeder {
@@ -13,7 +16,15 @@ class DatabaseSeeder {
     Logger.info('Seeding database...');
 
     try {
-      // 1. Create a specific Admin User
+      // 1. Create Roles
+      const adminRole = await Role.create({ role_name: 'Administrator', slug: 'admin' });
+      const hrRole = await Role.create({ role_name: 'Human Resources', slug: 'hr' });
+      const guardRole = await Role.create({ role_name: 'Security Guard', slug: 'guard' });
+
+      // 2. Create Companies
+      const companies = await CompanyFactory.createMany(5);
+
+      // 3. Create Admin User
       const admin = await UserFactory.create({
         guard_id: null,
         first_name: 'Admin',
@@ -23,16 +34,19 @@ class DatabaseSeeder {
         cel_num: null,
         username: 'admin@secureguard.com',
         password: 'secureguard.admin',
-        role: 'admin',
-        status: '',
         street: null,
         barangay: 'Carmen',
         city_or_municipality: 'Cagayan de Oro City',
         province: 'Misamis Oriental',
         region: 'Northern Mindanao',
-        date_hired: Date(),
+        is_available: true,
+        is_on_leave: false,
+        is_resigned: false,
+        date_hired: new Date(),
       });
+      await UserRole.create({ user_id: admin.id, role_id: adminRole.id });
 
+      // 4. Create HR User
       const hr = await UserFactory.create({
         guard_id: null,
         first_name: 'HR',
@@ -42,39 +56,45 @@ class DatabaseSeeder {
         cel_num: null,
         username: 'hr@secureguard.com',
         password: 'secureguard.hr',
-        role: 'hr',
-        status: '',
         street: null,
         barangay: 'Carmen',
         city_or_municipality: 'Cagayan de Oro City',
         province: 'Misamis Oriental',
         region: 'Northern Mindanao',
-        date_hired: Date(),
+        is_available: true,
+        is_on_leave: false,
+        is_resigned: false,
+        date_hired: new Date(),
       });
+      await UserRole.create({ user_id: hr.id, role_id: hrRole.id });
 
-      // 2. Create random guard users
+      // 5. Create random guard users
       const users = await UserFactory.createMany(20);
+      for (const user of users) {
+        await UserRole.create({ user_id: user.id, role_id: guardRole.id });
+      }
 
-      // 3. Create firearms
+      // 6. Create firearms
       const firearms = await FirearmFactory.createMany(10);
 
-      // 4. Create designations for users
-      const allUsers = [admin, hr, ...users];
+      // 7. Create designations for guards
       const designations = [];
-
-      for (const user of users.slice(0, 15)) {
+      for (let i = 0; i < Math.min(15, users.length); i++) {
+        const user = users[i];
+        const company = companies[i % companies.length];
         const designation = await DesignationFactory.create({
           user_id: user.id,
+          company_id: company.id,
         });
         designations.push(designation);
 
-        if (designation.status === 'active') {
-           await user.update({ status: 'assigned' });
+        if (designation.is_active) {
+          await user.update({ is_available: false });
         }
       }
 
-      // 5. Create firearm issuances (only for available firearms)
-      const availableFirearms = firearms.filter(f => f.status === 'available');
+      // 8. Create firearm issuances (only for available firearms)
+      const availableFirearms = firearms.filter(f => f.is_available && !f.is_expired && !f.is_maintenance);
       for (let i = 0; i < Math.min(availableFirearms.length, users.length); i++) {
         const user = users[i];
         const firearm = availableFirearms[i];
@@ -84,10 +104,10 @@ class DatabaseSeeder {
           firearm_id: firearm.id,
         });
 
-        await firearm.update({ status: 'issued' });
+        await firearm.update({ is_available: false });
       }
 
-      // 6. Create attendances for designations
+      // 9. Create attendances for designations
       for (const designation of designations) {
         const count = Math.floor(Math.random() * 5) + 1;
         for (let i = 0; i < count; i++) {

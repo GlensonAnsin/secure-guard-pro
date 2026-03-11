@@ -2,24 +2,37 @@ import { Sequelize, Op } from "sequelize";
 import User from "../models/User.js";
 import Attendance from "../models/Attendance.js";
 import Designation from "../models/Designation.js";
+import Company from "../models/Company.js";
 import FirearmIssuance from "../models/FirearmIssuance.js";
 import Firearm from "../models/Firearm.js";
+import UserRole from "../models/UserRole.js";
+import Role from "../models/Role.js";
 
 class DashboardService {
   /**
-   * Get guard stats - kept for backward compatibility if needed
+   * Get guard stats using boolean flags.
    */
   public async getGuardStats() {
+    const guardRole = await Role.findOne({ where: { slug: 'guard' } });
+    if (!guardRole) return { meta: { total: 0, available: 0, assigned: 0, on_leave: 0, resigned: 0 } };
+
+    const guardUserIds = await UserRole.findAll({
+      where: { role_id: guardRole.id },
+      attributes: ['user_id'],
+      raw: true,
+    });
+    const ids = guardUserIds.map((ur: any) => ur.user_id);
+
+    if (ids.length === 0) return { meta: { total: 0, available: 0, assigned: 0, on_leave: 0, resigned: 0 } };
+
     const stats = await User.findAll({
-      where: {
-        role: "guard",
-      },
+      where: { id: { [Op.in]: ids } },
       attributes: [
         [Sequelize.fn("COUNT", Sequelize.col("id")), "total"],
-        [Sequelize.literal("COUNT(CASE WHEN status = 'assigned' THEN 1 END)"), "assigned"],
-        [Sequelize.literal("COUNT(CASE WHEN status = 'unassigned' THEN 1 END)"), "unassigned"],
-        [Sequelize.literal("COUNT(CASE WHEN status = 'on_leave' THEN 1 END)"), "on_leave"],
-        [Sequelize.literal("COUNT(CASE WHEN status = 'resigned' THEN 1 END)"), "resigned"],
+        [Sequelize.literal("COUNT(CASE WHEN is_available = true AND is_on_leave = false AND is_resigned = false THEN 1 END)"), "available"],
+        [Sequelize.literal("COUNT(CASE WHEN is_available = false AND is_resigned = false THEN 1 END)"), "assigned"],
+        [Sequelize.literal("COUNT(CASE WHEN is_on_leave = true THEN 1 END)"), "on_leave"],
+        [Sequelize.literal("COUNT(CASE WHEN is_resigned = true THEN 1 END)"), "resigned"],
       ],
       raw: true,
     });
@@ -50,14 +63,13 @@ class DashboardService {
             },
           },
           attributes: [
-            [Sequelize.literal("COUNT(CASE WHEN status = 'present' THEN 1 END)"), "present"],
-            [Sequelize.literal("COUNT(CASE WHEN status = 'late' THEN 1 END)"), "late"],
-            [Sequelize.literal("COUNT(CASE WHEN status = 'absent' THEN 1 END)"), "absent"],
+            [Sequelize.literal("COUNT(CASE WHEN is_present = true THEN 1 END)"), "present"],
+            [Sequelize.literal("COUNT(CASE WHEN is_late = true THEN 1 END)"), "late"],
+            [Sequelize.literal("COUNT(CASE WHEN is_present = false AND is_on_leave = false AND time_out IS NOT NULL THEN 1 END)"), "absent"],
           ],
           raw: true,
         });
 
-        // Format day name
         const dayName = new Date(dateStr).toLocaleDateString("en-US", { weekday: "short" });
         return {
           name: dayName,
@@ -73,7 +85,7 @@ class DashboardService {
       const d = new Date();
       d.setMonth(d.getMonth() - (5 - i));
       return {
-        month: d.getMonth() + 1, // 1-12
+        month: d.getMonth() + 1,
         year: d.getFullYear(),
         name: d.toLocaleDateString("en-US", { month: "short" }),
       };
@@ -110,12 +122,18 @@ class DashboardService {
   }
 
   public async getRecentActivities(limit: number = 5) {
-    // 3. Recent Activities (Guards, Firearms, Designations, Issuances)
-    const recentGuards = await User.findAll({
-      where: { role: 'guard' },
-      limit,
-      order: [['created_at', 'DESC']],
-    });
+    const guardRole = await Role.findOne({ where: { slug: 'guard' } });
+    const guardUserIds = guardRole
+      ? (await UserRole.findAll({ where: { role_id: guardRole.id }, attributes: ['user_id'], raw: true })).map((ur: any) => ur.user_id)
+      : [];
+
+    const recentGuards = guardUserIds.length > 0
+      ? await User.findAll({
+          where: { id: { [Op.in]: guardUserIds } },
+          limit,
+          order: [['created_at', 'DESC']],
+        })
+      : [];
 
     const recentFirearms = await Firearm.findAll({
       limit,
@@ -125,7 +143,10 @@ class DashboardService {
     const recentDesignations = await Designation.findAll({
       limit,
       order: [['updated_at', 'DESC']],
-      include: [{ model: User, as: 'user' }],
+      include: [
+        { model: User, as: 'user' },
+        { model: Company, as: 'company' },
+      ],
     });
 
     const recentIssuances = await FirearmIssuance.findAll({
@@ -139,7 +160,7 @@ class DashboardService {
 
     const activities: any[] = [];
 
-    // 3.a New Guards
+    // New Guards
     recentGuards.forEach((g: any) => {
       const gTime = g.createdAt || g.created_at || new Date();
       activities.push({
@@ -151,32 +172,33 @@ class DashboardService {
       });
     });
 
-    // 3.b New Firearms
+    // New Firearms
     recentFirearms.forEach((f: any) => {
       const fTime = f.createdAt || f.created_at || new Date();
       activities.push({
         id: `fa_${f.id}`,
         user: "System Admin",
-        action: `New firearm added: ${f.serial_number || f.type}`,
+        action: `New firearm added: ${f.serial_num || f.type}`,
         time: fTime,
         type: "assignment",
       });
     });
 
-    // 3.c Designations
+    // Designations
     recentDesignations.forEach((d: any) => {
       const user = d.user;
-      let actionText = `Assigned to ${d.client}`;
+      const companyAddress = d.company?.address || 'Unknown Company';
+      let actionText = `Assigned to ${companyAddress}`;
       let type = "assignment";
-      if (d.status === "dismissed") {
-        actionText = `Dismissed from ${d.client}`;
+      if (d.is_dismissed) {
+        actionText = `Dismissed from ${companyAddress}`;
         type = "alert";
-      } else if (d.status === "completed") {
-        actionText = `Completed designation at ${d.client}`;
-      } else if (d.status !== "assigned") {
-        actionText = `Designation marked as ${d.status}`;
+      } else if (d.is_completed) {
+        actionText = `Completed designation at ${companyAddress}`;
+      } else if (!d.is_active) {
+        actionText = `Designation inactive at ${companyAddress}`;
       }
-      
+
       const dTime = d.updatedAt || d.updated_at || d.createdAt || d.created_at || new Date();
       activities.push({
         id: `des_${d.id}_${new Date(dTime).getTime()}`,
@@ -187,15 +209,14 @@ class DashboardService {
       });
     });
 
-    // 3.d Firearm Issuances
+    // Firearm Issuances
     recentIssuances.forEach((i: any) => {
       const user = i.user ? `${i.user.first_name} ${i.user.last_name}` : "Unknown";
-      const firearmName = i.firearm?.serial_number || i.firearm?.type || "Unknown Firearm";
-      
+      const firearmName = i.firearm?.serial_num || i.firearm?.type || "Unknown Firearm";
+
       const iCreated = new Date(i.createdAt || i.created_at || new Date());
       const iUpdated = new Date(i.updatedAt || i.updated_at || i.createdAt || i.created_at || new Date());
-      
-      // If it was returned recently
+
       if (i.turn_in_date && iUpdated.getTime() > iCreated.getTime() + 1000) {
         activities.push({
           id: `iss_ret_${i.id}`,
@@ -205,8 +226,7 @@ class DashboardService {
           type: "assignment",
         });
       }
-      
-      // Always show issuance note based on created_at
+
       activities.push({
         id: `iss_issued_${i.id}`,
         user,
@@ -220,7 +240,7 @@ class DashboardService {
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
       .slice(0, limit)
       .map((act) => {
-        const diff = Math.floor((new Date().getTime() - new Date(act.time).getTime()) / 60000); // in minutes
+        const diff = Math.floor((new Date().getTime() - new Date(act.time).getTime()) / 60000);
         let timeStr = "Just now";
         if (diff > 0 && diff < 60) timeStr = `${diff} mins ago`;
         else if (diff >= 60 && diff < 1440) timeStr = `${Math.floor(diff / 60)} hours ago`;

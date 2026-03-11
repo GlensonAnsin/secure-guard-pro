@@ -12,7 +12,12 @@ class FirearmService {
     const where: any = {};
 
     if (status && status !== 'all' && status !== 'All') {
-      where.status = status;
+      if (status === 'available') where.is_available = true;
+      else if (status === 'damaged') where.is_damaged = true;
+      else if (status === 'maintenance') where.is_maintenance = true;
+      else if (status === 'expiring') where.is_expiring = true;
+      else if (status === 'expired') where.is_expired = true;
+      else if (status === 'issued') where.is_available = false;
     }
 
     if (search) {
@@ -43,21 +48,25 @@ class FirearmService {
   }
 
   /**
-   * Get firearm statistics.
+   * Get firearm statistics using boolean flags.
    */
   public async getFirearmStats() {
     const total = await Firearm.count();
-    const issued = await Firearm.count({ where: { status: 'issued' } });
-    const available = await Firearm.count({ where: { status: 'available' } });
-    const maintenance = await Firearm.count({ where: { status: 'maintenance' } });
-    const expired = await Firearm.count({ where: { status: 'expired' } });
+    const available = await Firearm.count({ where: { is_available: true } });
+    const issued = await Firearm.count({ where: { is_available: false } });
+    const maintenance = await Firearm.count({ where: { is_maintenance: true } });
+    const damaged = await Firearm.count({ where: { is_damaged: true } });
+    const expired = await Firearm.count({ where: { is_expired: true } });
+    const expiring = await Firearm.count({ where: { is_expiring: true } });
 
     return {
       total,
-      issued,
       available,
+      issued,
       maintenance,
+      damaged,
       expired,
+      expiring,
     };
   }
 

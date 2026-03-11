@@ -17,7 +17,6 @@ import {
   Trash2,
 } from 'lucide-react';
 import { attendanceService } from '../../services/attendanceService';
-import { getStatusColor } from '../../lib/statusColor';
 
 export function AttendanceList() {
   const [records, setRecords] = useState<any[]>([]);
@@ -46,10 +45,10 @@ export function AttendanceList() {
       key: 'on_leave',
     },
     {
-      name: 'Half Day',
+      name: 'Early Out',
       value: halfDayCount,
       icon: Clock,
-      key: 'half_day',
+      key: 'early_out',
     },
   ];
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,7 +98,7 @@ export function AttendanceList() {
           setLateCount(res.data.meta.late || 0);
           setAbsentCount(res.data.meta.absent || 0);
           setOnLeaveCount(res.data.meta.on_leave || 0);
-          setHalfDayCount(res.data.meta.half_day || 0);
+          setHalfDayCount(res.data.meta.early_out || 0);
         }
       } catch (error) {
         console.error('Failed to fetch attendance stats:', error);
@@ -247,7 +246,7 @@ export function AttendanceList() {
                 <option value="on_duty">On Duty</option>
                 <option value="present">Present</option>
                 <option value="on_leave">On Leave</option>
-                <option value="half_day">Half Day</option>
+                <option value="early_out">Early Out</option>
                 <option value="late">Late</option>
                 <option value="absent">Absent</option>
               </select>
@@ -338,23 +337,33 @@ export function AttendanceList() {
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{record.hours_worked || '-'}</td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm">
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(record.status)}`}
-                      >
-                        {record.status === 'on_duty'
-                          ? 'On Duty'
-                          : record.status === 'late'
-                            ? 'Late'
-                            : record.status === 'absent'
-                              ? 'Absent'
-                              : record.status === 'present'
-                                ? 'Present'
-                                : record.status === 'on_leave'
-                                  ? 'On Leave'
-                                  : record.status === 'half_day'
-                                    ? 'Half Day'
-                                    : record.status}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {record.is_on_leave ? (
+                          <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                            On Leave
+                          </span>
+                        ) : record.time_in ? (
+                          <>
+                            <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                              {!record.time_out ? 'On Duty' : 'Present'}
+                            </span>
+                            {record.is_late && (
+                              <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                Late
+                              </span>
+                            )}
+                            {record.is_early_out && (
+                              <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                Early Out
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                            Absent
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{record.note || '-'}</td>
                     <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">

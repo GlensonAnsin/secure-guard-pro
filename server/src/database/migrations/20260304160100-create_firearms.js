@@ -1,9 +1,6 @@
 import { DataTypes } from 'sequelize';
 
 class CreateFirearmsTable {
-  /**
-   * Run the migrations.
-   */
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('firearms', {
       id: {
@@ -19,14 +16,36 @@ class CreateFirearmsTable {
       serial_num: {
         type: DataTypes.TEXT,
         allowNull: false,
+        unique: true,
       },
       exp_of_registration: {
         type: DataTypes.DATEONLY,
         allowNull: false,
       },
-      status: {
-        type: DataTypes.STRING(255),
+      is_available: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
+        defaultValue: true,
+      },
+      is_damaged: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_maintenance: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_expiring: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_expired: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
       note: {
         type: DataTypes.TEXT,
@@ -43,12 +62,14 @@ class CreateFirearmsTable {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
+      deleted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      },
     });
   }
 
-  /**
-   * Reverse the migrations.
-   */
   async down(queryInterface) {
     await queryInterface.dropTable('firearms');
   }

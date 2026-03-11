@@ -12,7 +12,11 @@ class FirearmFactory extends Factory<Firearm> {
       type: faker.helpers.arrayElement(types),
       serial_num: faker.string.alphanumeric(12).toUpperCase(),
       exp_of_registration: faker.date.future({ years: 2 }),
-      status: faker.helpers.arrayElement(['available', 'available', 'maintenance', 'expired']),
+      is_available: true,
+      is_damaged: false,
+      is_maintenance: faker.datatype.boolean({ probability: 0.15 }),
+      is_expiring: false,
+      is_expired: faker.datatype.boolean({ probability: 0.1 }),
       note: faker.datatype.boolean() ? faker.lorem.sentence() : null,
     };
   }
