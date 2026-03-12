@@ -27,6 +27,7 @@ export function GuardsList() {
   const [onLeaveCount, setOnLeaveCount] = useState(0);
   const [resignedCount, setResignedCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -57,10 +58,19 @@ export function GuardsList() {
     }
   };
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const fetchGuards = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await guardService.getAll(currentPage, itemsPerPage, searchQuery, statusFilter);
+      const res = await guardService.getAll(currentPage, itemsPerPage, debouncedSearch, statusFilter);
       if (res.data) {
         setGuards(res.data.data || []);
         setTotalPages(res.data.meta.last_page);
@@ -70,7 +80,7 @@ export function GuardsList() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, statusFilter]);
+  }, [currentPage, itemsPerPage, debouncedSearch, statusFilter]);
 
   useEffect(() => {
     fetchStats();
@@ -144,7 +154,6 @@ export function GuardsList() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1);
                 }}
               />
             </div>
@@ -237,23 +246,30 @@ export function GuardsList() {
                       {guard.date_hired || '-'}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">
-                      {guard.is_resigned ? (
-                        <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
-                          Resigned
-                        </span>
-                      ) : guard.is_on_leave ? (
-                        <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                          On Leave
-                        </span>
-                      ) : guard.is_available ? (
-                        <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                          Available
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                          Assigned
-                        </span>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {guard.is_resigned ? (
+                          <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                            Resigned
+                          </span>
+                        ) : (
+                          <>
+                            {guard.is_on_leave && (
+                              <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                On Leave
+                              </span>
+                            )}
+                            {!guard.is_available ? (
+                              <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                Assigned
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                Available
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                       <div className="flex justify-end gap-2">

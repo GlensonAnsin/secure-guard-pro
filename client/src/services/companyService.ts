@@ -2,8 +2,8 @@
 import api from './api';
 
 export const companyService = {
-  getAll: async (page = 1, limit = 15, search = '') => {
-    return await api.get('/companies', { params: { page, limit, search } });
+  getAll: async (page = 1, limit = 15, search = '', status = 'all') => {
+    return await api.get('/companies', { params: { page, limit, search, status } });
   },
 
   getById: async (id: number) => {

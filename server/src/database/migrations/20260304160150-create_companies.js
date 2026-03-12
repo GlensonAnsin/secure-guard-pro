@@ -9,6 +9,10 @@ class CreateCompaniesTable {
         primaryKey: true,
         type: DataTypes.BIGINT,
       },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       address: {
         type: DataTypes.TEXT,
         allowNull: false,

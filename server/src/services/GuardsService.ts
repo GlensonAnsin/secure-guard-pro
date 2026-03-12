@@ -12,12 +12,22 @@ class GuardService {
     const where: any = {};
 
     if (search && search !== '') {
+      const searchLower = `%${search}%`;
       where[Op.or] = [
-        { first_name: { [Op.like]: `%${search}%` } },
-        { middle_name: { [Op.like]: `%${search}%` } },
-        { last_name: { [Op.like]: `%${search}%` } },
-        { suffix: { [Op.like]: `%${search}%` } },
-        { guard_id: { [Op.like]: `%${search}%` } },
+        { first_name: { [Op.like]: searchLower } },
+        { middle_name: { [Op.like]: searchLower } },
+        { last_name: { [Op.like]: searchLower } },
+        { suffix: { [Op.like]: searchLower } },
+        { guard_id: { [Op.like]: searchLower } },
+        // Full name combinations
+        Sequelize.where(
+          Sequelize.fn('concat', Sequelize.col('first_name'), ' ', Sequelize.col('last_name')),
+          { [Op.like]: searchLower }
+        ),
+        Sequelize.where(
+          Sequelize.fn('concat', Sequelize.col('first_name'), ' ', Sequelize.col('middle_name'), ' ', Sequelize.col('last_name')),
+          { [Op.like]: searchLower }
+        )
       ];
     }
 
@@ -28,7 +38,7 @@ class GuardService {
       else if (status === 'assigned') where.is_available = false;
     }
 
-    return await Paginator.paginate(User, page, limit, {
+    const paginated = await Paginator.paginate(User, page, limit, {
       attributes: { exclude: ['password'] },
       order: [['id', 'DESC']],
       where,
@@ -42,6 +52,34 @@ class GuardService {
         },
       ],
     });
+
+    // Transform results to compute statuses
+    paginated.data = paginated.data.map((user: any) => {
+      const userJSON = user.toJSON();
+      const statuses: string[] = [];
+      
+      if (userJSON.is_resigned) {
+        statuses.push('resigned');
+      } else {
+        if (!userJSON.is_available) {
+          statuses.push('assigned');
+        } else {
+          statuses.push('available');
+        }
+
+        if (userJSON.is_on_leave) {
+          statuses.push('on_leave');
+        }
+      }
+      
+      return {
+        ...userJSON,
+        statuses,
+        status: statuses[0] || 'available'
+      };
+    }) as any;
+
+    return paginated;
   }
 
   /**

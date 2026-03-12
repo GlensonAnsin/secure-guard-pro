@@ -17,9 +17,18 @@ class DatabaseSeeder {
 
     try {
       // 1. Create Roles
-      const adminRole = await Role.create({ role_name: 'Administrator', slug: 'admin' });
-      const hrRole = await Role.create({ role_name: 'Human Resources', slug: 'hr' });
-      const guardRole = await Role.create({ role_name: 'Security Guard', slug: 'guard' });
+      const [adminRole] = await Role.findOrCreate({ 
+        where: { slug: 'admin' },
+        defaults: { role_name: 'Administrator' }
+      });
+      const [hrRole] = await Role.findOrCreate({
+        where: { slug: 'hr' },
+        defaults: { role_name: 'Human Resources' }
+      });
+      const [guardRole] = await Role.findOrCreate({
+        where: { slug: 'guard' },
+        defaults: { role_name: 'Security Guard' }
+      });
 
       // 2. Create Companies
       const companies = await CompanyFactory.createMany(5);

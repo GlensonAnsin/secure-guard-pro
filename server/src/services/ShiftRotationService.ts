@@ -140,6 +140,7 @@ class ShiftRotationService {
 
       return {
         company_id: c.id,
+        name: c.name,
         address: c.address,
         guard_count: designations.length,
         last_rotation: lastChanged,

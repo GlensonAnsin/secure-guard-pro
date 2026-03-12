@@ -1,12 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { 
   Archive, 
   RotateCcw, 
   Trash2, 
-  Search, 
-  Calendar, 
-  Filter, 
+  Calendar,
   ChevronLeft, 
   ChevronRight, 
   Loader2,
@@ -181,7 +180,9 @@ export function ArchivePage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-1.5 text-sm text-slate-600">
                       <Calendar className="h-3.5 w-3.5 text-slate-300" />
-                      {record.deleted_at ? new Date(record.deleted_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                      {record.deleted_at || record.deletedAt 
+                        ? new Date(record.deleted_at || record.deletedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) 
+                        : '—'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">

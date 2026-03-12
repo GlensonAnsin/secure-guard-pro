@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, Link as LinkIcon } from 'lucide-react';
-import { guardService } from '../../services/guardService';
 import { designationService } from '../../services/designationService';
+import { companyService } from '../../services/companyService';
+import { guardViewService } from '../../services/guardViewService';
 
 export function GuardAssign() {
   const navigate = useNavigate();
@@ -12,10 +13,13 @@ export function GuardAssign() {
   const [error, setError] = useState<string | null>(null);
   const [guardName, setGuardName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [companies, setCompanies] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
-    client: '',
+    company_id: '',
     address: '',
+    day_start: '1',
+    day_end: '5',
     shift_in: '',
     shift_out: '',
     date_assigned: new Date().toISOString().split('T')[0],
@@ -23,30 +27,52 @@ export function GuardAssign() {
   });
 
   useEffect(() => {
-    const fetchGuard = async () => {
+    const fetchData = async () => {
       if (!id) return;
       try {
-        const res = await guardService.getById(Number(id));
-        const guard = res.data;
-        
-        if (guard.status === 'resigned') {
+        const [guardRes, companiesRes] = await Promise.all([
+          guardViewService.getById(Number(id)),
+          companyService.getAll(1, 100, '', 'active')
+        ]);
+
+        const guard = guardRes.data;
+        if (guard.is_resigned) {
           setError('This guard has resigned and cannot be assigned to a post.');
+        } else if (!guard.is_available) {
+          setError('This guard is already assigned to a post. Dismiss the current assignment first.');
+        } else if (guard.is_on_leave) {
+          setError('This guard is currently on leave and cannot be assigned to a post.');
         }
-        
-        setGuardName(`${guard.first_name} ${guard.last_name}`);
+
+        setGuardName(`${guard.first_name || ''} ${guard.last_name || ''}`.trim());
+        setCompanies(companiesRes.data?.data || []);
       } catch (err) {
-        console.error('Failed to fetch guard details:', err);
-        setError('Failed to fetch guard details.');
+        console.error('Failed to fetch assignment data:', err);
+        setError('Failed to load required data.');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchGuard();
+    fetchData();
   }, [id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      
+      // Auto-fill address if company changes
+      if (name === 'company_id') {
+        const selectedCompany = companies.find(c => c.id.toString() === value);
+        if (selectedCompany) {
+          newData.address = selectedCompany.address;
+        } else {
+          newData.address = '';
+        }
+      }
+      
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,16 +84,22 @@ export function GuardAssign() {
     try {
       // 1. Create Designation
       const designationPayload = {
-        ...formData,
         user_id: Number(id),
+        company_id: Number(formData.company_id),
+        day_start: Number(formData.day_start),
+        day_end: Number(formData.day_end),
+        shift_in: formData.shift_in,
+        shift_out: formData.shift_out,
+        date_assigned: formData.date_assigned,
+        note: formData.note,
         status: 'active',
       };
 
       const desigRes = (await designationService.create(designationPayload)) as any;
 
       if (desigRes.success || desigRes.status === 201 || desigRes.status === 200) {
-        // 2. Update Guard Status to assigned
-        await guardService.update(Number(id), { status: 'assigned' });
+        // 2. Update Guard Status to assigned using the specific status update service
+        await guardViewService.updateStatus(Number(id), 'assigned');
         navigate(`/guards/${id}`);
       } else {
         setError(desigRes.message || 'Failed to assign guard.');
@@ -121,36 +153,88 @@ export function GuardAssign() {
             </h2>
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-3">
-                <label htmlFor="client" className="block text-sm font-medium leading-6 text-slate-900">
-                  Client Name *
+                <label htmlFor="company_id" className="block text-sm font-medium leading-6 text-slate-900">
+                  Select Company *
                 </label>
                 <div className="mt-2">
-                  <input
-                    type="text"
+                  <select
                     required
-                    name="client"
-                    id="client"
-                    value={formData.client}
+                    name="company_id"
+                    id="company_id"
+                    value={formData.company_id}
                     onChange={handleChange}
-                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
-                  />
+                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2 bg-white"
+                  >
+                    <option value="">-- Choose a Company --</option>
+                    {companies.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div className="sm:col-span-3">
                 <label htmlFor="address" className="block text-sm font-medium leading-6 text-slate-900">
-                  Post Address *
+                  Post Address (Auto-filled)
                 </label>
                 <div className="mt-2">
                   <input
                     type="text"
-                    required
+                    readOnly
                     name="address"
                     id="address"
+                    placeholder="Select a company first"
                     value={formData.address}
-                    onChange={handleChange}
-                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
+                    className="block w-full rounded-md border-0 py-2 text-slate-500 shadow-sm ring-1 ring-inset ring-slate-200 bg-slate-50 sm:text-sm sm:leading-6 px-2 cursor-not-allowed"
                   />
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="day_start" className="block text-sm font-medium leading-6 text-slate-900">
+                  Work Days Start *
+                </label>
+                <div className="mt-2">
+                  <select
+                    name="day_start"
+                    id="day_start"
+                    value={formData.day_start}
+                    onChange={handleChange}
+                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2 bg-white"
+                  >
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                    <option value="0">Sunday</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label htmlFor="day_end" className="block text-sm font-medium leading-6 text-slate-900">
+                  Work Days End *
+                </label>
+                <div className="mt-2">
+                  <select
+                    name="day_end"
+                    id="day_end"
+                    value={formData.day_end}
+                    onChange={handleChange}
+                    className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2 bg-white"
+                  >
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                    <option value="0">Sunday</option>
+                  </select>
                 </div>
               </div>
 

@@ -2,7 +2,9 @@ import User from "../models/User.js";
 import Designation from "../models/Designation.js";
 import Company from "../models/Company.js";
 import Attendance from "../models/Attendance.js";
-import { Op } from "sequelize";
+import FirearmIssuance from "../models/FirearmIssuance.js";
+import Firearm from "../models/Firearm.js";
+import { Op, Sequelize } from "sequelize";
 
 class GuardViewService {
   /**
@@ -22,17 +24,48 @@ class GuardViewService {
             },
           ],
         },
+        {
+          model: FirearmIssuance,
+          as: "firearmIssuances",
+          include: [
+            {
+              model: Firearm,
+              as: "firearm",
+            },
+          ],
+        },
       ],
     });
 
     if (!user) return null;
 
-    const userJSON = user.toJSON();
+    const userJSON = user.toJSON() as any;
+    
+    // Compute multiple statuses
+    const statuses: string[] = [];
+    const hasActiveAssignment = userJSON.designations?.some((d: any) => d.is_active);
+
+    if (userJSON.is_resigned) {
+      statuses.push('resigned');
+    } else {
+      if (hasActiveAssignment) {
+        statuses.push('assigned');
+      } else {
+        statuses.push('available');
+      }
+      if (userJSON.is_on_leave) {
+        statuses.push('on_leave');
+      }
+    }
+    
+    userJSON.statuses = statuses;
+    userJSON.status = statuses[0] || 'available'; // Keep legacy status for compatibility
+
     const currentDate = new Date();
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    for (const designation of (userJSON as any).designations as any[]) {
+    for (const designation of userJSON.designations || []) {
       const totalHours = await Attendance.sum('hours_worked', {
         where: { designation_id: designation.id }
       });
@@ -54,41 +87,43 @@ class GuardViewService {
   }
 
   /**
-   * Update user status by ID using boolean flags.
+   * Update user status flags.
    */
   public async updateUserStatus(id: number, status: string) {
     const user = await User.findByPk(id);
     if (!user) return null;
 
-    // Reset all status flags first
-    user.is_available = false;
-    user.is_on_leave = false;
-    user.is_resigned = false;
+    if (status === 'on_leave') {
+      user.is_on_leave = true;
+    } else if (status === 'available') {
+      user.is_on_leave = false;
+    } else if (status === 'resigned') {
+      user.is_resigned = true;
+      user.is_available = false;
+      user.is_on_leave = false;
+      user.termination_date = new Date();
 
-    switch (status) {
-      case 'available':
-        user.is_available = true;
-        user.termination_date = null;
-        break;
-      case 'on_leave':
-        user.is_on_leave = true;
-        user.termination_date = null;
-        break;
-      case 'resigned':
-        user.is_resigned = true;
-        user.termination_date = new Date();
-        break;
-      case 'assigned':
-        // Assigned = not available, not on leave, not resigned
-        user.termination_date = null;
-        break;
-      default:
-        user.is_available = true;
-        user.termination_date = null;
+      // Automatically cancel current assignments
+      await Designation.update(
+        { 
+          is_active: false, 
+          is_dismissed: true, 
+          date_of_dismissal: new Date().toISOString().split('T')[0] as any,
+          note: Sequelize.literal("CONCAT(COALESCE(note, ''), '\nAutomated dismissal due to resignation.')")
+        },
+        { 
+          where: { 
+            user_id: id, 
+            is_active: true 
+          } 
+        }
+      );
+    } else if (status === 'assigned') {
+      user.is_available = false;
+      // Note: we don't automatically set is_on_leave here as it can coexist
     }
 
     await user.save();
-
     return this.getUserById(id);
   }
 }

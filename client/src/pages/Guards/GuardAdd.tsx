@@ -42,7 +42,7 @@ export function GuardAdd() {
     city_or_municipality: '',
     province: '',
     region: '',
-    status: 'unassigned',
+    status: 'available',
     date_hired: new Date().toISOString().split('T')[0],
     username: '',
     password: '',

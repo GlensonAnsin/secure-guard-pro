@@ -56,7 +56,10 @@ class ArchiveService {
 
     const record = await model.findByPk(id, { paranoid: false });
     if (!record) throw new Error('Record not found');
-    if (!record.deleted_at) throw new Error('Record is not archived');
+    
+    // Check for both naming conventions
+    const isArchived = (record as any).deleted_at || (record as any).deletedAt;
+    if (!isArchived) throw new Error('Record is not archived');
 
     await record.restore();
     return record;

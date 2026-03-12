@@ -34,6 +34,15 @@ class DesignationService {
    * Create a new designation.
    */
   public async createDesignation(data: DesignationCreationAttributes) {
+    const company = await Company.findByPk(data.company_id);
+    if (!company) {
+      throw new Error('Target company not found.');
+    }
+    
+    if (!company.is_active) {
+      throw new Error(`Cannot assign guard to "${company.name}" because the company is currently inactive.`);
+    }
+
     return await Designation.create(data);
   }
 

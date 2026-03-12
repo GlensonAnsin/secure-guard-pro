@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { 
@@ -15,7 +16,8 @@ import {
   X,
   User as UserIcon,
   Lock,
-  Contact
+  Contact,
+  CheckCircle2,
 } from 'lucide-react';
 import { userManagementService } from '../../services/userManagementService';
 

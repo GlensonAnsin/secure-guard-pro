@@ -26,23 +26,34 @@ export function CompaniesList() {
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<any>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
-  const [formData, setFormData] = useState({ address: '', note: '' });
+  const [formData, setFormData] = useState({ name: '', address: '', note: '', is_active: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
   const navigate = useNavigate();
   const isAdmin = authService.isAdmin();
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   useEffect(() => {
     fetchCompanies();
-  }, [page, searchQuery]);
+  }, [page, debouncedSearch, statusFilter]);
 
   const fetchCompanies = async () => {
     try {
       setIsLoading(true);
-      const res = await companyService.getAll(page, 15, searchQuery);
+      const res = await companyService.getAll(page, 15, debouncedSearch, statusFilter);
       setCompanies(res.data?.data || []);
       setMeta(res.data?.meta || {});
     } catch (err) {
@@ -66,7 +77,7 @@ export function CompaniesList() {
       }
       setShowForm(false);
       setEditingCompany(null);
-      setFormData({ address: '', note: '' });
+      setFormData({ name: '', address: '', note: '', is_active: true });
       fetchCompanies();
     } catch (err: any) {
       console.error('Failed to save company:', err);
@@ -78,7 +89,12 @@ export function CompaniesList() {
 
   const handleEdit = (company: any) => {
     setEditingCompany(company);
-    setFormData({ address: company.address, note: company.note || '' });
+    setFormData({ 
+      name: company.name || '', 
+      address: company.address, 
+      note: company.note || '',
+      is_active: company.is_active
+    });
     setShowForm(true);
   };
 
@@ -110,7 +126,7 @@ export function CompaniesList() {
             onClick={() => {
               setShowForm(true);
               setEditingCompany(null);
-              setFormData({ address: '', note: '' });
+              setFormData({ name: '', address: '', note: '', is_active: true });
             }}
             className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
           >
@@ -122,20 +138,38 @@ export function CompaniesList() {
 
       <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200 flex-1 flex flex-col">
         <div className="border-b border-slate-200 p-4">
-          <div className="relative w-full sm:max-w-sm">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="h-4 w-4 text-slate-400" />
+          <div className="flex flex-col sm:flex-row flex-1 gap-4 sm:items-center">
+            <div className="relative w-full sm:max-w-sm sm:flex-1">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full rounded-md border-0 py-1.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white"
+                placeholder="Search companies by name or address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <input
-              type="text"
-              className="block w-full rounded-md border-0 py-1.5 pl-10 pr-3 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-              placeholder="Search companies by address..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setPage(1);
-              }}
-            />
+
+            <div className="flex items-center gap-2">
+              <label htmlFor="statusFilter" className="text-sm font-medium text-slate-700 whitespace-nowrap">
+                Filter Status:
+              </label>
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="block rounded-md border-0 py-1.5 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -152,7 +186,7 @@ export function CompaniesList() {
                   ID
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
-                  Address
+                  Company Details
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-slate-900">
                   Status
@@ -167,15 +201,22 @@ export function CompaniesList() {
                 companies.map((company) => (
                   <tr key={company.id} className="hover:bg-slate-50 transition-colors">
                     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-slate-900 sm:pl-6">
-                      #{company.id}
+                      {company.id}
                     </td>
                     <td className="px-3 py-4 text-sm text-slate-600">
                       <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                        <Building2 className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-medium text-slate-900">{company.address}</p>
+                          <p className="font-bold text-slate-900 text-base">{company.name}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5 text-slate-500">
+                            <MapPin className="h-3.5 w-3.5" />
+                            <p className="text-sm">{company.address}</p>
+                          </div>
                           {company.note && (
-                            <p className="text-xs text-slate-500 mt-1 italic">"{company.note}"</p>
+                            <p className="text-xs text-slate-400 mt-2 italic flex items-center gap-1">
+                              <Info className="h-3 w-3" />
+                              {company.note}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -326,6 +367,20 @@ export function CompaniesList() {
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-4">
                 <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">
+                    Company Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white px-2"
+                    placeholder="e.g., Limketkai Center"
+                  />
+                </div>
+                <div>
                   <label htmlFor="address" className="block text-sm font-medium text-slate-700 mb-1">
                     Company Address <span className="text-red-500">*</span>
                   </label>
@@ -335,12 +390,12 @@ export function CompaniesList() {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     required
                     rows={3}
-                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white"
+                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white px-2"
                     placeholder="Enter full company address..."
                   />
                   <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
                     <Info className="h-3 w-3" />
-                    This address will be shown on guard assignments.
+                    Separate the building name from the actual street address or district.
                   </p>
                 </div>
                 <div>
@@ -355,6 +410,23 @@ export function CompaniesList() {
                     className="block w-full rounded-md border-0 py-1.5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white"
                     placeholder="Internal reference or special instructions..."
                   />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={formData.is_active}
+                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                    />
+                    <label htmlFor="is_active" className="text-sm font-medium text-slate-700 cursor-pointer">
+                      Active Status
+                    </label>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500 italic">
+                    Inactive companies will be hidden from assignment selections.
+                  </p>
                 </div>
               </div>
 

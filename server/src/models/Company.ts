@@ -2,6 +2,7 @@ import { Model, DataTypes, Sequelize, Optional } from 'sequelize';
 
 interface CompanyAttributes {
   id: number;
+  name: string;
   address: string;
   is_active: boolean;
   note: string | null;
@@ -14,6 +15,7 @@ export interface CompanyCreationAttributes extends Optional<CompanyAttributes, '
 
 class Company extends Model<CompanyAttributes, CompanyCreationAttributes> implements CompanyAttributes {
   declare id: number;
+  declare name: string;
   declare address: string;
   declare is_active: boolean;
   declare note: string | null;
@@ -28,6 +30,10 @@ class Company extends Model<CompanyAttributes, CompanyCreationAttributes> implem
           type: DataTypes.BIGINT,
           autoIncrement: true,
           primaryKey: true,
+        },
+        name: {
+          type: DataTypes.STRING,
+          allowNull: false,
         },
         address: {
           type: DataTypes.TEXT,

@@ -8,7 +8,8 @@ class CompanyController {
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 15;
       const search = req.query.search as string;
-      const companies = await CompanyService.getAllCompanies(page, limit, search);
+      const status = req.query.status as string;
+      const companies = await CompanyService.getAllCompanies(page, limit, search, status);
       return ApiResponse.success(res, companies, 'Companies retrieved successfully');
     } catch (error) {
       next(error);

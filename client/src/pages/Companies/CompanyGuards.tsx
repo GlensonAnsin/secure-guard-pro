@@ -11,6 +11,7 @@ import {
   User,
   MapPin,
   Loader2,
+  Building2,
 } from 'lucide-react';
 import { companyService } from '../../services/companyService';
 import { shiftRotationService } from '../../services/shiftRotationService';
@@ -90,11 +91,12 @@ export function CompanyGuards() {
           </button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              <MapPin className="h-6 w-6 text-blue-600" />
-              Guards at {data.company.address}
+              <Building2 className="h-6 w-6 text-blue-600" />
+              {data.company.name}
             </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {data.guards.length} security personnel currently assigned to this location.
+            <p className="mt-1 text-sm text-slate-500 flex items-center gap-1">
+              <MapPin className="h-4 w-4 text-slate-400" />
+              {data.company.address}
             </p>
           </div>
         </div>

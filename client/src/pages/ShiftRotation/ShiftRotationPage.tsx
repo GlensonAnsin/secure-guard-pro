@@ -7,8 +7,6 @@ import {
   Users, 
   AlertCircle,
   Building2,
-  CheckCircle2,
-  ChevronRight,
   Loader2,
   Info
 } from 'lucide-react';
@@ -133,7 +131,10 @@ export function ShiftRotationPage() {
                 return (
                   <tr key={s.company_id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-slate-900">{s.address}</div>
+                      <div className="flex flex-col">
+                        <div className="text-sm font-semibold text-slate-900">{s.name}</div>
+                        <div className="text-xs text-slate-500 truncate max-w-[250px]">{s.address}</div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium">

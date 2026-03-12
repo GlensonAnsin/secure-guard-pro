@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import Company, { CompanyCreationAttributes } from '../models/Company.js';
 import Designation from '../models/Designation.js';
 import User from '../models/User.js';
@@ -7,11 +8,18 @@ class CompanyService {
   /**
    * Get all companies with pagination.
    */
-  public async getAllCompanies(page: number, limit: number, search?: string) {
+  public async getAllCompanies(page: number, limit: number, search?: string, status?: string) {
     const where: any = {};
-    if (search) {
-      const { Op } = require('sequelize');
-      where.address = { [Op.like]: `%${search}%` };
+    
+    if (search && search !== '') {
+      where[Op.or] = [
+        { name: { [Op.like]: `%${search}%` } },
+        { address: { [Op.like]: `%${search}%` } }
+      ];
+    }
+
+    if (status && status !== 'all') {
+      where.is_active = status === 'active';
     }
 
     return await Paginator.paginate(Company, page, limit, {
@@ -72,6 +80,7 @@ class CompanyService {
     return {
       company: {
         id: company.id,
+        name: company.name,
         address: company.address,
         is_active: company.is_active,
       },

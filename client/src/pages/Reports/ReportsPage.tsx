@@ -10,7 +10,6 @@ import {
   Crosshair, 
   Building,
   Calendar,
-  Building2,
   Search,
   Loader2,
   FileText
@@ -34,6 +33,7 @@ export function ReportsPage() {
 
   useEffect(() => {
     loadCompanies();
+    setData([]);
     fetchReport();
   }, [activeTab]);
 
@@ -191,18 +191,16 @@ export function ReportsPage() {
             )}
 
             {activeTab === 'attendance' && (
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <Building2 className="h-4 w-4 text-slate-400" />
-                </div>
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Company</label>
                 <select
                   value={filters.companyId}
                   onChange={(e) => setFilters({ ...filters, companyId: e.target.value })}
-                  className="block w-48 rounded-lg border-slate-200 pl-10 pr-10 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 appearance-none"
+                  className="block w-full rounded-lg border-slate-200 py-2 pl-3 pr-10 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
                 >
                   <option value="">All Companies</option>
-                  {companies.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.address}</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
@@ -348,7 +346,7 @@ export function ReportsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.hours_worked}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">
-                          {row.status.split(', ').map((s: string, j: number) => (
+                          {row.status?.split(', ').map((s: string, j: number) => (
                             <span key={j} className={`inline-flex items-center rounded-md px-2 py-1 text-[10px] font-medium ring-1 ring-inset ${
                               s.toLowerCase() === 'present' || s.toLowerCase() === 'on duty'
                                 ? 'bg-green-50 text-green-700 ring-green-600/20'
@@ -388,7 +386,7 @@ export function ReportsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">
-                          {row.status.split(', ').map((s: string, j: number) => (
+                          {row.status?.split(', ').map((s: string, j: number) => (
                             <span key={j} className={`inline-flex items-center rounded-md px-2 py-1 text-[10px] font-medium ring-1 ring-inset ${
                               s.toLowerCase() === 'available'
                                 ? 'bg-green-50 text-green-700 ring-green-600/20'
@@ -412,18 +410,19 @@ export function ReportsPage() {
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Company ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Company Name</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Address</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Active Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Total Personnel</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Personnel List</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Personnel</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {data.map((row: any, i: number) => (
-                    <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-code text-slate-600">{row.company_id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{row.address}</td>
+                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-600">#{row.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{row.name}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{row.address}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
                           row.is_active 
@@ -433,9 +432,8 @@ export function ReportsPage() {
                           {row.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">{row.total_guards}</td>
                       <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">
-                        {row.guards?.map((g: any) => g.name).join(', ') || '—'}
+                        {row.total_guards || 0} guards
                       </td>
                     </tr>
                   ))}
