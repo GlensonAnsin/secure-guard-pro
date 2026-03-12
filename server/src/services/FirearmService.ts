@@ -81,7 +81,8 @@ class FirearmService {
    * Create a new firearm.
    */
   public async createFirearm(data: FirearmCreationAttributes) {
-    return await Firearm.create(data);
+    const enrichedData = this.calculateExpiryFlags(data);
+    return await Firearm.create(enrichedData);
   }
 
   /**
@@ -90,7 +91,31 @@ class FirearmService {
   public async updateFirearm(id: number, data: Partial<FirearmCreationAttributes>) {
     const firearm = await Firearm.findByPk(id);
     if (!firearm) throw new Error('Firearm not found');
-    return await firearm.update(data);
+    
+    const enrichedData = this.calculateExpiryFlags({ ...firearm.toJSON(), ...data });
+    return await firearm.update(enrichedData);
+  }
+
+  /**
+   * Helper to calculate expiry flags based on registration expiration date.
+   */
+  private calculateExpiryFlags(data: any) {
+    if (!data.exp_of_registration) return data;
+
+    const expiryDate = new Date(data.exp_of_registration);
+    const now = new Date();
+    // Reset hours to compare dates only
+    now.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
+
+    const diffTime = expiryDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
+
+    return {
+      ...data,
+      is_expired: diffDays < 0,
+      is_expiring: diffDays >= 0 && diffDays < 30,
+    };
   }
 
   /**

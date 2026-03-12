@@ -116,8 +116,26 @@ class ReportService {
   /**
    * Firearms report.
    */
-  public async generateFirearmReport() {
+  public async generateFirearmReport(type?: string, status?: string) {
+    const where: any = {};
+    if (type) {
+      where.type = type;
+    }
+
+    if (status) {
+      if (status === 'available') where.is_available = true;
+      else if (status === 'damaged') where.is_damaged = true;
+      else if (status === 'maintenance') where.is_maintenance = true;
+      else if (status === 'expiring') where.is_expiring = true;
+      else if (status === 'expired') where.is_expired = true;
+      else if (status === 'issued') {
+        where.is_available = false;
+        where.is_expired = false;
+      }
+    }
+
     const firearms = await Firearm.findAll({
+      where,
       include: [
         {
           model: FirearmIssuance,
@@ -153,8 +171,14 @@ class ReportService {
   /**
    * Company report with guard count and hours.
    */
-  public async generateCompanyReport() {
+  public async generateCompanyReport(isActive?: string) {
+    const where: any = {};
+    if (isActive !== undefined && isActive !== '') {
+      where.is_active = isActive === 'true';
+    }
+
     const companies = await Company.findAll({
+      where,
       include: [
         {
           model: Designation,

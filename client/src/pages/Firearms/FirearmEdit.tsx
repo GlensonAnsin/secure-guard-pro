@@ -26,7 +26,9 @@ export function FirearmEdit() {
     serial_num: '',
     exp_of_registration: '',
     reg_date: '',
-    status: 'Available',
+    is_available: true,
+    is_maintenance: false,
+    is_damaged: false,
     note: '',
   });
 
@@ -63,7 +65,9 @@ export function FirearmEdit() {
               ? new Date(firearm.exp_of_registration).toISOString().split('T')[0]
               : '',
             reg_date: firearm.reg_date ? new Date(firearm.reg_date).toISOString().split('T')[0] : '',
-            status: firearm.status || 'Available',
+            is_available: firearm.is_available ?? true,
+            is_maintenance: firearm.is_maintenance ?? false,
+            is_damaged: firearm.is_damaged ?? false,
             note: firearm.note || '',
           });
         }
@@ -92,7 +96,23 @@ export function FirearmEdit() {
         makeModel: newModels.length > 0 ? newModels[0] : '',
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => {
+        const newData = { ...prev, [name]: value };
+        
+        // Auto-calculate expiry flags if date changes
+        if (name === 'exp_of_registration') {
+          const expiryDate = new Date(value);
+          const now = new Date();
+          const diffDays = (expiryDate.getTime() - now.getTime()) / (1000 * 3600 * 24);
+          
+          Object.assign(newData, {
+            is_expired: diffDays <= 0,
+            is_expiring: diffDays > 0 && diffDays < 30
+          });
+        }
+        
+        return newData;
+      });
     }
   };
 
@@ -105,7 +125,9 @@ export function FirearmEdit() {
         type: `${formData.firearmCategory} - ${formData.makeModel}`,
         serial_num: formData.serial_num.toUpperCase(),
         exp_of_registration: formData.exp_of_registration,
-        status: formData.status,
+        is_available: formData.is_available,
+        is_maintenance: formData.is_maintenance,
+        is_damaged: formData.is_damaged,
         note: formData.note || null,
       };
 
@@ -218,22 +240,62 @@ export function FirearmEdit() {
               </div>
 
               <div className="sm:col-span-3">
-                <label htmlFor="status" className="block text-sm font-medium leading-6 text-slate-900">
-                  Status
+                <label htmlFor="is_available" className="block text-sm font-medium leading-6 text-slate-900">
+                  Availability
                 </label>
                 <div className="mt-2">
                   <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
+                    id="is_available"
+                    name="is_available"
+                    value={formData.is_available ? 'true' : 'false'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.value === 'true' }))}
                     className="block w-full rounded-md border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                   >
-                    <option value="available">Available</option>
-                    <option value="issued">Issued</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="expired">Expired</option>
+                    <option value="true">Available</option>
+                    <option value="false">Issued / Unavailable</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label className="block text-sm font-medium leading-6 text-slate-900">
+                  Status Flags
+                </label>
+                <div className="mt-4 space-y-4">
+                  <div className="relative flex items-start">
+                    <div className="flex h-6 items-center">
+                      <input
+                        id="is_maintenance"
+                        name="is_maintenance"
+                        type="checkbox"
+                        checked={formData.is_maintenance}
+                        onChange={(e) => setFormData(prev => ({ ...prev, is_maintenance: e.target.checked }))}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                      />
+                    </div>
+                    <div className="ml-3 text-sm leading-6">
+                      <label htmlFor="is_maintenance" className="font-medium text-slate-900">
+                        Under Maintenance
+                      </label>
+                    </div>
+                  </div>
+                  <div className="relative flex items-start">
+                    <div className="flex h-6 items-center">
+                      <input
+                        id="is_damaged"
+                        name="is_damaged"
+                        type="checkbox"
+                        checked={formData.is_damaged}
+                        onChange={(e) => setFormData(prev => ({ ...prev, is_damaged: e.target.checked }))}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                      />
+                    </div>
+                    <div className="ml-3 text-sm leading-6">
+                      <label htmlFor="is_damaged" className="font-medium text-slate-900">
+                        Damaged
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 

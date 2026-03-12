@@ -23,7 +23,14 @@ export function ReportsPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
-  const [filters, setFilters] = useState({ dateFrom: '', dateTo: '', companyId: '' });
+  const [filters, setFilters] = useState({ 
+    dateFrom: '', 
+    dateTo: '', 
+    companyId: '',
+    firearmType: '',
+    firearmStatus: '',
+    companyStatus: ''
+  });
 
   useEffect(() => {
     loadCompanies();
@@ -56,9 +63,12 @@ export function ReportsPage() {
           res = await reportService.getAttendanceReport(params);
           break;
         case 'firearms':
+          if (filters.firearmType) params.type = filters.firearmType;
+          if (filters.firearmStatus) params.status = filters.firearmStatus;
           res = await reportService.getFirearmReport(params);
           break;
         case 'companies':
+          if (filters.companyStatus) params.isActive = filters.companyStatus;
           res = await reportService.getCompanyReport(params);
           break;
       }
@@ -76,6 +86,9 @@ export function ReportsPage() {
       if (filters.dateFrom) params.dateFrom = filters.dateFrom;
       if (filters.dateTo) params.dateTo = filters.dateTo;
       if (filters.companyId) params.companyId = filters.companyId;
+      if (filters.firearmType) params.type = filters.firearmType;
+      if (filters.firearmStatus) params.status = filters.firearmStatus;
+      if (filters.companyStatus) params.isActive = filters.companyStatus;
       await reportService.downloadCSV(activeTab, params);
     } catch (err) {
       console.error(err);
@@ -191,6 +204,53 @@ export function ReportsPage() {
                   {companies.map((c: any) => (
                     <option key={c.id} value={c.id}>{c.address}</option>
                   ))}
+                </select>
+              </div>
+            )}
+
+            {activeTab === 'firearms' && (
+              <>
+                <div className="relative">
+                  <select
+                    value={filters.firearmType}
+                    onChange={(e) => setFilters({ ...filters, firearmType: e.target.value })}
+                    className="block w-40 rounded-lg border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 appearance-none"
+                  >
+                    <option value="">All Types</option>
+                    <option value=".38 Revolver">.38 Revolver</option>
+                    <option value="9mm Pistol">9mm Pistol</option>
+                    <option value=".45 Caliber Pistol">.45 Caliber Pistol</option>
+                    <option value="Shotgun 12 Gauge">Shotgun 12 Gauge</option>
+                  </select>
+                </div>
+                <div className="relative">
+                  <select
+                    value={filters.firearmStatus}
+                    onChange={(e) => setFilters({ ...filters, firearmStatus: e.target.value })}
+                    className="block w-40 rounded-lg border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 appearance-none"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="available">Available</option>
+                    <option value="issued">Issued</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="expiring">Expiring</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'companies' && (
+              <div className="relative">
+                <select
+                  value={filters.companyStatus}
+                  onChange={(e) => setFilters({ ...filters, companyStatus: e.target.value })}
+                  className="block w-40 rounded-lg border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 appearance-none"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
               </div>
             )}

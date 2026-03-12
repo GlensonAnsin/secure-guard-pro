@@ -16,9 +16,10 @@ import {
   ArrowRightLeft,
   Trash2,
   XCircle,
+  Clock10,
+  ShieldMinus
 } from 'lucide-react';
 import { firearmService } from '../../services/firearmService';
-// getStatusColor removed as per inline refactoring
 
 export function FirearmsList() {
   const [firearms, setFirearms] = useState<any[]>([]);
@@ -26,7 +27,9 @@ export function FirearmsList() {
   const [issuedCount, setIssuedCount] = useState(0);
   const [availableCount, setAvailableCount] = useState(0);
   const [maintenanceCount, setMaintenanceCount] = useState(0);
+  const [expiringCount, setIsExpiringCount] = useState(0);
   const [expiredCount, setExpiredCount] = useState(0);
+  const [damagedCount, setDamagedCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,7 +43,9 @@ export function FirearmsList() {
     { name: 'Issued', value: issuedCount, icon: ShieldAlert, key: 'issued' },
     { name: 'Available', value: availableCount, icon: CheckCircle2, key: 'available' },
     { name: 'Maintenance', value: maintenanceCount, icon: AlertTriangle, key: 'maintenance' },
+    { name: 'Expiring', value: expiringCount, icon: Clock10, key: 'expiring '},
     { name: 'Expired', value: expiredCount, icon: XCircle, key: 'expired' },
+    { name: 'Damaged', value: damagedCount, icon: ShieldMinus, key: 'damaged' },
   ];
 
   const fetchStats = async () => {
@@ -51,7 +56,9 @@ export function FirearmsList() {
         setIssuedCount(res.data.issued || 0);
         setAvailableCount(res.data.available || 0);
         setMaintenanceCount(res.data.maintenance || 0);
+        setIsExpiringCount(res.data.expiring || 0);
         setExpiredCount(res.data.expired || 0);
+        setDamagedCount(res.data.damaged || 0);
       }
     } catch (error) {
       console.error('Failed to fetch firearm stats:', error);
@@ -103,7 +110,7 @@ export function FirearmsList() {
   }, []);
 
   const getAssignedTo = (fa: any) => {
-    if (fa.status?.toLowerCase() === 'issued' && fa.issuances && fa.issuances.length > 0) {
+    if (!fa.is_available && fa.issuances && fa.issuances.length > 0) {
       // Find the active issuance or the latest one
       const activeIssuance = fa.issuances.find((i: any) => !i.turn_in_date) || fa.issuances[0];
       if (activeIssuance?.user) {
@@ -132,7 +139,7 @@ export function FirearmsList() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
         {stats.map((stat) => (
           <div key={stat.name} className="overflow-hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div className="flex items-center justify-between">
@@ -180,7 +187,9 @@ export function FirearmsList() {
                 <option value="available">Available</option>
                 <option value="issued">Issued</option>
                 <option value="maintenance">Maintenance</option>
+                <option value="expiring">Expiring</option>
                 <option value="expired">Expired</option>
+                <option value="damaged">Damaged</option>
               </select>
             </div>
           </div>
@@ -248,27 +257,37 @@ export function FirearmsList() {
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        {fa.status === 'available' ? (
-                          <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                            Available
-                          </span>
-                        ) : fa.status === 'issued' ? (
-                          <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                            Issued
-                          </span>
-                        ) : fa.status === 'maintenance' ? (
-                          <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
-                            Maintenance
-                          </span>
-                        ) : fa.status === 'expired' ? (
-                          <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
-                            Expired
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-                            {fa.status || 'Unknown'}
-                          </span>
-                        )}
+                        <div className="flex flex-wrap gap-1">
+                          {fa.is_expired && (
+                            <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                              Expired
+                            </span>
+                          )}
+                          {fa.is_expiring && (
+                            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/10">
+                              Expiring
+                            </span>
+                          )}
+                          {fa.is_damaged && (
+                            <span className="inline-flex items-center rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/10">
+                              Damaged
+                            </span>
+                          )}
+                          {fa.is_maintenance && (
+                            <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                              Maintenance
+                            </span>
+                          )}
+                          {fa.is_available ? (
+                            <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                              Available
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                              Issued
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500 hidden lg:table-cell">
                         {getAssignedTo(fa)}
@@ -276,7 +295,7 @@ export function FirearmsList() {
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{fa.note || '-'}</td>
                       <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                         <div className="flex justify-end gap-3">
-                          {fa.status?.toLowerCase() === 'available' && (
+                          {fa.is_available && (
                             <Link
                               to={`/issuance/issue?firearm_id=${fa.id}`}
                               className="text-[#135dff] hover:text-[#135dff]/80 transition-colors flex items-center gap-1"

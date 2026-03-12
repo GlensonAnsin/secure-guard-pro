@@ -67,8 +67,8 @@ class ReportController {
    */
   public async firearmReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { format } = req.query as any;
-      const data = await ReportService.generateFirearmReport();
+      const { type, status, format } = req.query as any;
+      const data = await ReportService.generateFirearmReport(type, status);
 
       if (format === 'csv') {
         const csv = ReportService.generateCSV(data, [
@@ -95,8 +95,8 @@ class ReportController {
    */
   public async companyReport(req: Request, res: Response, next: NextFunction) {
     try {
-      const { format } = req.query as any;
-      const data = await ReportService.generateCompanyReport();
+      const { isActive, format } = req.query as any;
+      const data = await ReportService.generateCompanyReport(isActive);
 
       if (format === 'csv') {
         const flatData = data.map(c => ({
