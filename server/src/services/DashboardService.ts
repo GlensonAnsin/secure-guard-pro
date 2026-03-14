@@ -29,10 +29,10 @@ class DashboardService {
       where: { id: { [Op.in]: ids } },
       attributes: [
         [Sequelize.fn("COUNT", Sequelize.col("id")), "total"],
-        [Sequelize.literal("COUNT(CASE WHEN is_available = true AND is_on_leave = false AND is_resigned = false THEN 1 END)"), "available"],
-        [Sequelize.literal("COUNT(CASE WHEN is_available = false AND is_resigned = false THEN 1 END)"), "assigned"],
-        [Sequelize.literal("COUNT(CASE WHEN is_on_leave = true THEN 1 END)"), "on_leave"],
-        [Sequelize.literal("COUNT(CASE WHEN is_resigned = true THEN 1 END)"), "resigned"],
+        [Sequelize.literal("COUNT(CASE WHEN is_available = 1 AND is_on_leave = 0 AND is_resigned = 0 THEN 1 END)"), "available"],
+        [Sequelize.literal("COUNT(CASE WHEN is_available = 0 AND is_resigned = 0 THEN 1 END)"), "assigned"],
+        [Sequelize.literal("COUNT(CASE WHEN is_on_leave = 1 THEN 1 END)"), "on_leave"],
+        [Sequelize.literal("COUNT(CASE WHEN is_resigned = 1 THEN 1 END)"), "resigned"],
       ],
       raw: true,
     });
@@ -63,9 +63,9 @@ class DashboardService {
             },
           },
           attributes: [
-            [Sequelize.literal("COUNT(CASE WHEN is_present = true THEN 1 END)"), "present"],
-            [Sequelize.literal("COUNT(CASE WHEN is_late = true THEN 1 END)"), "late"],
-            [Sequelize.literal("COUNT(CASE WHEN is_present = false AND is_on_leave = false AND time_out IS NOT NULL THEN 1 END)"), "absent"],
+            [Sequelize.literal("COUNT(CASE WHEN is_present = 1 THEN 1 END)"), "present"],
+            [Sequelize.literal("COUNT(CASE WHEN is_late = 1 THEN 1 END)"), "late"],
+            [Sequelize.literal("COUNT(CASE WHEN is_present = 0 AND is_on_leave = 0 AND time_out IS NOT NULL THEN 1 END)"), "absent"],
           ],
           raw: true,
         });

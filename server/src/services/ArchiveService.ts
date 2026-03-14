@@ -28,9 +28,33 @@ class ArchiveService {
 
     const offset = (page - 1) * limit;
 
+    const include: any[] = [];
+    if (entity === 'users') {
+      // No specific include needed for users yet
+    } else if (entity === 'firearms') {
+      // No specific include needed
+    } else if (entity === 'designations') {
+      include.push({ model: User, as: 'user', paranoid: false });
+      include.push({ model: Company, as: 'company', paranoid: false });
+    } else if (entity === 'attendances') {
+      include.push({
+        model: Designation,
+        as: 'designation',
+        paranoid: false,
+        include: [
+          { model: User, as: 'user', paranoid: false },
+          { model: Company, as: 'company', paranoid: false }
+        ]
+      });
+    } else if (entity === 'firearm_issuances') {
+      include.push({ model: User, as: 'user', paranoid: false });
+      include.push({ model: Firearm, as: 'firearm', paranoid: false });
+    }
+
     const { count, rows } = await model.findAndCountAll({
       where: { deleted_at: { [Op.ne]: null } },
       paranoid: false,
+      include,
       limit,
       offset,
       order: [['deleted_at', 'DESC']],

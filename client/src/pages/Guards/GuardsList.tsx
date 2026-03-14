@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Loader2,
   ShieldBan,
-  Trash2,
+  Archive,
 } from 'lucide-react';
 import { guardService } from '../../services/guardService';
 
@@ -91,7 +91,7 @@ export function GuardsList() {
   }, [fetchGuards]);
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this guard? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to archive this guard?')) {
       setIsDeleting(id);
       try {
         const res = await guardService.delete(id) as any;
@@ -111,9 +111,14 @@ export function GuardsList() {
   return (
     <div className="space-y-6 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Guards Management</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage all security personnel, their statuses, and assignments.</p>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <ShieldCheck className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Guards Management</h1>
+            <p className="mt-1 text-sm text-slate-500">Manage all security personnel, their statuses, and assignments.</p>
+          </div>
         </div>
         <Link
           to="/guards/add"
@@ -132,8 +137,22 @@ export function GuardsList() {
                 <p className="text-sm font-medium text-slate-500">{stat.name}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{stat.value}</p>
               </div>
-              <div className="rounded-md bg-blue-50 p-2 border border-slate-100">
-                <stat.icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
+              <div className={`rounded-md p-2 border ${
+                stat.name === 'Total Guards' ? 'bg-indigo-50 border-indigo-100' :
+                stat.name === 'Assigned' ? 'bg-blue-50 border-blue-100' :
+                stat.name === 'Available' ? 'bg-green-50 border-green-100' :
+                stat.name === 'On Leave' ? 'bg-yellow-50 border-yellow-100' :
+                stat.name === 'Resigned' ? 'bg-red-50 border-red-100' :
+                'bg-slate-50 border-slate-100'
+              }`}>
+                <stat.icon className={`h-6 w-6 ${
+                  stat.name === 'Total Guards' ? 'text-indigo-600' :
+                  stat.name === 'Assigned' ? 'text-blue-600' :
+                  stat.name === 'Available' ? 'text-green-600' :
+                  stat.name === 'On Leave' ? 'text-yellow-600' :
+                  stat.name === 'Resigned' ? 'text-red-600' :
+                  'text-slate-600'
+                }`} aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -291,12 +310,12 @@ export function GuardsList() {
                           onClick={() => handleDelete(guard.id)}
                           disabled={isDeleting === guard.id}
                           className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
-                          title="Delete Guard"
+                          title="Archive Guard"
                         >
                           {isDeleting === guard.id ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
                           ) : (
-                            <Trash2 className="h-5 w-5" />
+                            <Archive className="h-5 w-5" />
                           )}
                         </button>
                       </div>

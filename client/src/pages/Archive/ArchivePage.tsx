@@ -12,17 +12,16 @@ import {
   Users,
   Crosshair,
   Building,
-  CalendarCheck,
   FileText,
   AlertCircle,
-  Database
+  Database,
+  Clock
 } from 'lucide-react';
 import { archiveService } from '../../services/archiveService';
 
 const ENTITIES = [
   { key: 'users', label: 'Users', icon: Users },
   { key: 'firearms', label: 'Firearms', icon: Crosshair },
-  { key: 'designations', label: 'Designations', icon: CalendarCheck },
   { key: 'attendances', label: 'Attendances', icon: FileText },
   { key: 'firearm_issuances', label: 'Issuances', icon: Database },
   { key: 'companies', label: 'Companies', icon: Building },
@@ -93,7 +92,63 @@ export function ArchivePage() {
           </div>
         );
       case 'companies':
-        return <span className="font-medium text-slate-900">{record.address || 'N/A'}</span>;
+        return (
+          <div className="flex flex-col">
+            <span className="font-semibold text-slate-900">{record.name || 'N/A'}</span>
+            <span className="text-xs text-slate-500 line-clamp-1">{record.address || 'N/A'}</span>
+          </div>
+        );
+      case 'designations':
+        return (
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <Users className="h-3 w-3 text-slate-400" />
+              <span className="font-semibold text-slate-900">
+                {record.user?.first_name} {record.user?.last_name}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Building className="h-3 w-3 text-slate-400" />
+              <span className="text-xs text-slate-500">{record.company?.name || 'Unknown Company'}</span>
+            </div>
+          </div>
+        );
+      case 'attendances': {
+        const guard = record.designation?.user;
+        const company = record.designation?.company;
+        const timeIn = record.time_in ? new Date(record.time_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+        const timeOut = record.time_out ? new Date(record.time_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+        
+        return (
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-900">
+                {guard?.first_name} {guard?.last_name}
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Attendance</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {timeIn} - {timeOut}</span>
+              <span className="flex items-center gap-1"><Building className="h-3 w-3" /> {company?.name || 'N/A'}</span>
+            </div>
+          </div>
+        );
+      }
+      case 'firearm_issuances':
+        return (
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <Users className="h-3 w-3 text-slate-400" />
+              <span className="font-semibold text-slate-900">
+                {record.user?.first_name} {record.user?.last_name}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Crosshair className="h-3 w-3" />
+              <span>{record.firearm?.type} (SN: {record.firearm?.serial_num})</span>
+            </div>
+          </div>
+        );
       default:
         return <span className="text-slate-600 italic">Record ID: {record.id}</span>;
     }
@@ -104,8 +159,8 @@ export function ArchivePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-orange-50 p-2.5 border border-orange-100 shadow-sm">
-            <Archive className="h-6 w-6 text-orange-600" />
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <Archive className="h-6 w-6 text-blue-600" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Archive Vault</h1>
@@ -129,7 +184,7 @@ export function ArchivePage() {
                   key={e.key}
                   onClick={() => { setEntity(e.key); setPage(1); }}
                   className={`
-                    group relative flex items-center gap-2 py-4 px-6 text-sm font-medium transition-all whitespace-nowrap
+                    group relative flex items-center gap-2 py-4 px-6 text-sm font-medium transition-all whitespace-nowrap cursor-pointer
                     ${isActive 
                       ? 'text-orange-600 border-b-2 border-orange-600 bg-white shadow-sm' 
                       : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 border-b-2 border-transparent'
@@ -189,14 +244,14 @@ export function ArchivePage() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleRestore(record.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-xs font-semibold border border-green-200 hover:bg-green-100 transition-all active:scale-95"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-xs font-semibold border border-green-200 hover:bg-green-100 transition-all active:scale-95 cursor-pointer"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         Restore
                       </button>
                       <button
                         onClick={() => handlePermanentDelete(record.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-red-600 text-xs font-semibold border border-red-100 hover:bg-red-50 hover:border-red-200 transition-all active:scale-95"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-red-600 text-xs font-semibold border border-red-100 hover:bg-red-50 hover:border-red-200 transition-all active:scale-95 cursor-pointer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         Purge
@@ -215,7 +270,7 @@ export function ArchivePage() {
                       </div>
                       <h3 className="text-lg font-medium text-slate-900">Archive is empty</h3>
                       <p className="text-slate-500 mt-1 max-w-sm mx-auto">
-                        No deleted {entity} records were found. Records that are deleted normally will appear here for recovery.
+                        No deleted records were found. Records that are deleted normally will appear here for recovery.
                       </p>
                     </div>
                   </td>

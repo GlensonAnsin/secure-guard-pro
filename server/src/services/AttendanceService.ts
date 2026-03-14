@@ -179,32 +179,25 @@ class AttendanceService {
    */
   public async getAttendanceStats(date?: string) {
     const where: any = {};
-    let start: Date;
-    let end: Date;
 
     if (date) {
-      start = new Date(`${date}T00:00:00.000Z`);
-      end = new Date(`${date}T23:59:59.999Z`);
-    } else {
-      const now = new Date();
-      start = new Date(now.toISOString().split('T')[0] + 'T00:00:00.000Z');
-      end = new Date(now.toISOString().split('T')[0] + 'T23:59:59.999Z');
+      const start = new Date(`${date}T00:00:00.000Z`);
+      const end = new Date(`${date}T23:59:59.999Z`);
+      where.time_in = {
+        [Op.gte]: start,
+        [Op.lte]: end,
+      };
     }
-
-    where.time_in = {
-      [Op.gte]: start,
-      [Op.lte]: end,
-    };
 
     const stats = await Attendance.findAll({
       where,
       attributes: [
-        [Sequelize.literal("COUNT(CASE WHEN is_present = true THEN 1 END)"), 'present'],
-        [Sequelize.literal("COUNT(CASE WHEN time_out IS NULL AND is_on_leave = false THEN 1 END)"), 'duty'],
-        [Sequelize.literal("COUNT(CASE WHEN is_late = true THEN 1 END)"), 'late'],
-        [Sequelize.literal("COUNT(CASE WHEN is_on_leave = true THEN 1 END)"), 'on_leave'],
-        [Sequelize.literal("COUNT(CASE WHEN is_early_out = true THEN 1 END)"), 'early_out'],
-        [Sequelize.literal("COUNT(CASE WHEN is_present = false AND is_on_leave = false AND time_out IS NOT NULL THEN 1 END)"), 'absent'],
+        [Sequelize.literal("COUNT(CASE WHEN is_present = 1 THEN 1 END)"), 'present'],
+        [Sequelize.literal("COUNT(CASE WHEN time_out IS NULL AND is_on_leave = 0 THEN 1 END)"), 'duty'],
+        [Sequelize.literal("COUNT(CASE WHEN is_late = 1 THEN 1 END)"), 'late'],
+        [Sequelize.literal("COUNT(CASE WHEN is_on_leave = 1 THEN 1 END)"), 'on_leave'],
+        [Sequelize.literal("COUNT(CASE WHEN is_early_out = 1 THEN 1 END)"), 'early_out'],
+        [Sequelize.literal("COUNT(CASE WHEN is_present = 0 AND is_on_leave = 0 AND time_out IS NOT NULL THEN 1 END)"), 'absent'],
       ],
       raw: true,
     });

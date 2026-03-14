@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Users, ShieldAlert, ShieldCheck, UserX, TrendingUp, Clock, Crosshair, X } from 'lucide-react';
+import { Users, ShieldAlert, ShieldCheck, UserX, TrendingUp, Clock, Crosshair, X, LayoutDashboard } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { authService } from '../services/authService';
 import { dashboardService } from '../services/dashboardService';
 
 export function Dashboard() {
   const [dashboardStats, setDashboardStats] = useState([
-    { name: 'Total Guards', value: '0', icon: Users, change: '0%', changeType: 'neutral' },
-    { name: 'Assigned', value: '0', icon: ShieldCheck, change: '0%', changeType: 'neutral' },
-    { name: 'Available', value: '0', icon: Clock, change: '0%', changeType: 'neutral' },
-    { name: 'On Leave', value: '0', icon: UserX, change: '0%', changeType: 'neutral' },
+    { name: 'Total Guards', value: '0', icon: Users, change: '0%', changeType: 'neutral', color: 'indigo' },
+    { name: 'Assigned', value: '0', icon: ShieldCheck, change: '0%', changeType: 'neutral', color: 'blue' },
+    { name: 'Available', value: '0', icon: Clock, change: '0%', changeType: 'neutral', color: 'green' },
+    { name: 'On Leave', value: '0', icon: UserX, change: '0%', changeType: 'neutral', color: 'yellow' },
   ]);
 
   const [attendanceData, setAttendanceData] = useState<{ name: string; present: number; late: number; absent: number }[]>([]);
@@ -19,6 +20,7 @@ export function Dashboard() {
   const [showActivitiesModal, setShowActivitiesModal] = useState(false);
   const [fullActivities, setFullActivities] = useState<{ id: string | number; user: string; action: string; time: string; type: string }[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const isAdmin = authService.isAdmin();
 
   const fetchFullActivities = async () => {
     try {
@@ -52,6 +54,7 @@ export function Dashboard() {
             icon: Users,
             change: '',
             changeType: 'neutral',
+            color: 'indigo'
           },
           {
             name: 'Assigned',
@@ -59,6 +62,7 @@ export function Dashboard() {
             icon: ShieldCheck,
             change: '',
             changeType: 'neutral',
+            color: 'blue'
           },
           {
             name: 'Available',
@@ -66,6 +70,7 @@ export function Dashboard() {
             icon: Clock,
             change: '',
             changeType: 'neutral',
+            color: 'green'
           },
           {
             name: 'On Leave',
@@ -73,6 +78,7 @@ export function Dashboard() {
             icon: UserX,
             change: '',
             changeType: 'neutral',
+            color: 'yellow'
           },
         ]);
 
@@ -93,8 +99,16 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <LayoutDashboard className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
+            <p className="mt-1 text-sm text-slate-500">Quick overview of system statistics and recent activities.</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -105,8 +119,20 @@ export function Dashboard() {
                 <p className="text-sm font-medium text-slate-500">{stat.name}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{stat.value}</p>
               </div>
-              <div className="rounded-md bg-blue-50 p-2 border border-blue-100">
-                <stat.icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
+              <div className={`rounded-md p-2 border ${
+                stat.color === 'blue' ? 'bg-blue-50 border-blue-100' :
+                stat.color === 'indigo' ? 'bg-indigo-50 border-indigo-100' :
+                stat.color === 'green' ? 'bg-green-50 border-green-100' :
+                stat.color === 'yellow' ? 'bg-yellow-50 border-yellow-100' :
+                'bg-slate-50 border-slate-100'
+              }`}>
+                <stat.icon className={`h-6 w-6 ${
+                  stat.color === 'blue' ? 'text-blue-600' :
+                  stat.color === 'indigo' ? 'text-indigo-600' :
+                  stat.color === 'green' ? 'text-green-600' :
+                  stat.color === 'yellow' ? 'text-yellow-600' :
+                  'text-slate-600'
+                }`} aria-hidden="true" />
               </div>
             </div>
             {stat.change && (
@@ -251,15 +277,17 @@ export function Dashboard() {
               </span>
               <span className="text-slate-400">&rarr;</span>
             </Link>
-            <Link
-              to="/issuance/issue"
-              className="flex w-full items-center justify-between rounded-lg bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            >
-              <span className="flex items-center">
-                <Crosshair className="mr-3 h-5 w-5 text-slate-400" /> Issue Firearm
-              </span>
-              <span className="text-slate-400">&rarr;</span>
-            </Link>
+            {isAdmin && (
+              <Link
+                to="/issuance/issue"
+                className="flex w-full items-center justify-between rounded-lg bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                <span className="flex items-center">
+                  <Crosshair className="mr-3 h-5 w-5 text-slate-400" /> Issue Firearm
+                </span>
+                <span className="text-slate-400">&rarr;</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

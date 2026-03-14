@@ -13,8 +13,8 @@ import {
   Loader2,
   UserX,
   X,
+  Archive,
   Edit,
-  Trash2,
 } from 'lucide-react';
 import { attendanceService } from '../../services/attendanceService';
 
@@ -34,21 +34,24 @@ export function AttendanceList() {
       value: presentCount,
       icon: CheckCircle2,
       key: 'present',
+      color: 'green',
     },
-    { name: 'On Duty', value: dutyCount, icon: ShieldCheck, key: 'duty' },
-    { name: 'Late', value: lateCount, icon: Clock, key: 'late' },
-    { name: 'Absent', value: absentCount, icon: XCircle, key: 'absent' },
+    { name: 'On Duty', value: dutyCount, icon: ShieldCheck, key: 'duty', color: 'blue' },
+    { name: 'Late', value: lateCount, icon: Clock, key: 'late', color: 'amber' },
+    { name: 'Absent', value: absentCount, icon: XCircle, key: 'absent', color: 'red' },
     {
       name: 'On Leave',
       value: onLeaveCount,
       icon: UserX,
       key: 'on_leave',
+      color: 'yellow',
     },
     {
       name: 'Early Out',
       value: halfDayCount,
       icon: Clock,
       key: 'early_out',
+      color: 'indigo',
     },
   ];
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,14 +74,27 @@ export function AttendanceList() {
   const fetchAttendance = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Fetch table records
       const res = await attendanceService.getAll(currentPage, itemsPerPage, searchQuery, statusFilter, dateFilter);
       if (res.data) {
         setRecords(res.data.data || []);
         setTotalPages(res.data.meta?.last_page || 1);
         setTotalCount(res.data.meta?.total || 0);
       }
+
+      // Fetch stats for the entire day (ignoring status/search filters)
+      const statsRes = await attendanceService.getAttendanceStats(dateFilter);
+      if (statsRes.data) {
+        const s = statsRes.data.meta;
+        setPresentCount(s.present || 0);
+        setDutyCount(s.duty || 0);
+        setLateCount(s.late || 0);
+        setAbsentCount(s.absent || 0);
+        setOnLeaveCount(s.on_leave || 0);
+        setHalfDayCount(s.early_out || 0);
+      }
     } catch (error) {
-      console.error('Failed to fetch attendance:', error);
+      console.error('Failed to fetch attendance data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -88,24 +104,6 @@ export function AttendanceList() {
     fetchAttendance();
   }, [fetchAttendance]);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await attendanceService.getAttendanceStats(dateFilter);
-        if (res.data) {
-          setPresentCount(res.data.meta.present || 0);
-          setDutyCount(res.data.meta.duty || 0);
-          setLateCount(res.data.meta.late || 0);
-          setAbsentCount(res.data.meta.absent || 0);
-          setOnLeaveCount(res.data.meta.on_leave || 0);
-          setHalfDayCount(res.data.meta.early_out || 0);
-        }
-      } catch (error) {
-        console.error('Failed to fetch attendance stats:', error);
-      }
-    };
-    fetchStats();
-  }, [dateFilter]);
 
   const handleEditClick = (record: any) => {
     setEditingRecord(record);
@@ -161,7 +159,7 @@ export function AttendanceList() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this attendance record?')) {
+    if (window.confirm('Are you sure you want to archive this attendance record?')) {
       setIsDeleting(id);
       try {
         const res = await attendanceService.delete(id) as any;
@@ -180,9 +178,14 @@ export function AttendanceList() {
   return (
     <div className="space-y-6 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Attendance Records</h1>
-          <p className="mt-1 text-sm text-slate-500">Track and manage daily attendance across all client sites.</p>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <Clock className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Attendance Records</h1>
+            <p className="mt-1 text-sm text-slate-500">Track and manage daily attendance across all client sites.</p>
+          </div>
         </div>
         <button
           onClick={handleExport}
@@ -206,8 +209,24 @@ export function AttendanceList() {
                 <p className="text-sm font-medium text-slate-500">{stat.name}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{stat.value}</p>
               </div>
-              <div className="rounded-md bg-blue-50 p-2 border border-slate-100">
-                <stat.icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
+              <div className={`rounded-md p-2 border ${
+                stat.color === 'blue' ? 'bg-blue-50 border-blue-100' :
+                stat.color === 'green' ? 'bg-green-50 border-green-100' :
+                stat.color === 'amber' ? 'bg-amber-50 border-amber-100' :
+                stat.color === 'red' ? 'bg-red-50 border-red-100' :
+                stat.color === 'yellow' ? 'bg-yellow-50 border-yellow-100' :
+                stat.color === 'indigo' ? 'bg-indigo-50 border-indigo-100' :
+                'bg-slate-50 border-slate-100'
+              }`}>
+                <stat.icon className={`h-6 w-6 ${
+                  stat.color === 'blue' ? 'text-blue-600' :
+                  stat.color === 'green' ? 'text-green-600' :
+                  stat.color === 'amber' ? 'text-amber-600' :
+                  stat.color === 'red' ? 'text-red-600' :
+                  stat.color === 'yellow' ? 'text-yellow-600' :
+                  stat.color === 'indigo' ? 'text-indigo-600' :
+                  'text-slate-600'
+                }`} aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -379,12 +398,12 @@ export function AttendanceList() {
                           onClick={() => handleDelete(record.id)}
                           disabled={isDeleting === record.id}
                           className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
-                          title="Delete Record"
+                          title="Archive Record"
                         >
                           {isDeleting === record.id ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
                           ) : (
-                            <Trash2 className="h-5 w-5" />
+                            <Archive className="h-5 w-5" />
                           )}
                         </button>
                       </div>

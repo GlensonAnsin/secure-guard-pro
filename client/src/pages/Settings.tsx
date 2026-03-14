@@ -10,6 +10,7 @@ export function Settings() {
     first_name: '',
     last_name: '',
     email: '',
+    username: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -22,6 +23,7 @@ export function Settings() {
         first_name: currentUser.first_name || '',
         last_name: currentUser.last_name || '',
         email: currentUser.email || '',
+        username: currentUser.username || '',
       });
     }
   }, []);
@@ -160,7 +162,7 @@ export function Settings() {
                 <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
                   <div className="sm:col-span-3">
                     <label htmlFor="first_name" className="block text-sm font-medium leading-6 text-slate-900">
-                      First name
+                      First name <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-2">
                       <input
@@ -176,7 +178,7 @@ export function Settings() {
                   </div>
                   <div className="sm:col-span-3">
                     <label htmlFor="last_name" className="block text-sm font-medium leading-6 text-slate-900">
-                      Last name
+                      Last name <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-2">
                       <input
@@ -185,6 +187,22 @@ export function Settings() {
                         id="last_name"
                         required
                         value={formData.last_name}
+                        onChange={handleChange}
+                        className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
+                      />
+                    </div>
+                  </div>
+                  <div className="sm:col-span-4">
+                    <label htmlFor="username" className="block text-sm font-medium leading-6 text-slate-900">
+                      Username <span className="text-red-500">*</span>
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        required
+                        value={formData.username}
                         onChange={handleChange}
                         className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                       />
@@ -241,7 +259,7 @@ export function Settings() {
                 )}
                 <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
                   <div className="col-span-full">
-                    <label className="block text-sm font-medium leading-6 text-slate-900">Current Password</label>
+                    <label className="block text-sm font-medium leading-6 text-slate-900">Current Password <span className="text-red-500">*</span></label>
                     <div className="mt-2">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -254,7 +272,7 @@ export function Settings() {
                     </div>
                   </div>
                   <div className="col-span-full">
-                    <label className="block text-sm font-medium leading-6 text-slate-900">New Password</label>
+                    <label className="block text-sm font-medium leading-6 text-slate-900">New Password <span className="text-red-500">*</span></label>
                     <div className="mt-2">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -267,7 +285,7 @@ export function Settings() {
                     </div>
                   </div>
                   <div className="col-span-full">
-                    <label className="block text-sm font-medium leading-6 text-slate-900">Confirm New Password</label>
+                    <label className="block text-sm font-medium leading-6 text-slate-900">Confirm New Password <span className="text-red-500">*</span></label>
                     <div className="mt-2">
                       <input
                         type={showPassword ? 'text' : 'password'}

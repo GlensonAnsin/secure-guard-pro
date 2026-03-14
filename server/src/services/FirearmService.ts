@@ -42,6 +42,7 @@ class FirearmService {
               attributes: ['id', 'first_name', 'last_name'],
             },
           ],
+          order: [['id', 'DESC']],
         },
       ],
     });

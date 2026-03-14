@@ -61,7 +61,7 @@ export function Login() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium leading-6 text-slate-900">
-                Email address
+                Email address <span className="text-red-500">*</span>
               </label>
               <div className="mt-2">
                 <input
@@ -79,7 +79,7 @@ export function Login() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium leading-6 text-slate-900">
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
               <div className="mt-2">
                 <input

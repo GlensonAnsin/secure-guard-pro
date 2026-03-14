@@ -19,17 +19,17 @@ import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Guards', href: '/guards', icon: Shield },
-  { name: 'Companies', href: '/companies', icon: Building2 },
-  { name: 'Attendance', href: '/attendance', icon: Clock },
-  { name: 'Firearms', href: '/firearms', icon: Crosshair, adminOrHR: true },
-  { name: 'Firearm Issuance', href: '/issuance', icon: FileCheck, adminOrHR: true },
-  { name: 'Reports', href: '/reports', icon: BarChart3, adminOrHR: true },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, adminOrHR: true },
+  { name: 'Guards', href: '/guards', icon: Shield, adminOrHR: true },
+  { name: 'Companies', href: '/companies', icon: Building2, adminOrHR: true },
+  { name: 'Attendance', href: '/attendance', icon: Clock, adminOrHR: true },
+  { name: 'Firearms', href: '/firearms', icon: Crosshair, adminOnly: true },
+  { name: 'Firearm Issuance', href: '/issuance', icon: FileCheck, adminOnly: true },
+  { name: 'Reports', href: '/reports', icon: BarChart3, adminOnly: true },
   { name: 'Shift Rotation', href: '/shift-rotation', icon: RefreshCw, adminOrHR: true },
   { name: 'Users', href: '/user-management', icon: Users, adminOnly: true },
   { name: 'Archive', href: '/archive', icon: Archive, adminOnly: true },
-  { name: 'Settings', href: '/settings', icon: SettingsIcon },
+  { name: 'Settings', href: '/settings', icon: SettingsIcon, adminOrHR: true },
 ];
 
 interface SidebarProps {

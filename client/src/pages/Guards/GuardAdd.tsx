@@ -237,7 +237,7 @@ export function GuardAdd() {
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-2">
                 <label htmlFor="first_name" className="block text-sm font-medium leading-6 text-slate-900">
-                  First name *
+                  First name <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
@@ -263,6 +263,9 @@ export function GuardAdd() {
                     id="middle_name"
                     value={formData.middle_name}
                     onChange={handleChange}
+                    minLength={2}
+                    pattern="^[a-zA-Z\s]{2,}$"
+                    title="Middle name must be at least 2 characters and no initials."
                     className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                   />
                 </div>
@@ -270,7 +273,7 @@ export function GuardAdd() {
 
               <div className="sm:col-span-2">
                 <label htmlFor="last_name" className="block text-sm font-medium leading-6 text-slate-900">
-                  Last name *
+                  Last name <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
@@ -303,15 +306,19 @@ export function GuardAdd() {
 
               <div className="sm:col-span-2">
                 <label htmlFor="cel_num" className="block text-sm font-medium leading-6 text-slate-900">
-                  Contact Number
+                  Contact Number <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
                     type="tel"
+                    required
                     name="cel_num"
                     id="cel_num"
                     value={formData.cel_num}
                     onChange={handleChange}
+                    maxLength={11}
+                    pattern="\d{11}"
+                    title="Contact number must be exactly 11 digits."
                     className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                   />
                 </div>
@@ -338,12 +345,12 @@ export function GuardAdd() {
           {/* Address Details */}
           <div>
             <h2 className="text-base font-semibold leading-7 text-slate-900 border-b border-slate-200 pb-2 mb-6">
-              Address *
+              Address
             </h2>
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-3">
                 <label htmlFor="region" className="block text-sm font-medium leading-6 text-slate-900">
-                  Region
+                  Region <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -364,7 +371,7 @@ export function GuardAdd() {
               </div>
               <div className="sm:col-span-3">
                 <label htmlFor="province" className="block text-sm font-medium leading-6 text-slate-900">
-                  Province
+                  Province <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -386,7 +393,7 @@ export function GuardAdd() {
               </div>
               <div className="sm:col-span-3">
                 <label htmlFor="city_or_municipality" className="block text-sm font-medium leading-6 text-slate-900">
-                  City / Municipality
+                  City / Municipality <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -408,7 +415,7 @@ export function GuardAdd() {
               </div>
               <div className="sm:col-span-3">
                 <label htmlFor="barangay" className="block text-sm font-medium leading-6 text-slate-900">
-                  Barangay
+                  Barangay <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -454,11 +461,12 @@ export function GuardAdd() {
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-3">
                 <label htmlFor="guard_id" className="block text-sm font-medium leading-6 text-slate-900">
-                  Guard ID (License Number)
+                  Guard ID (License Number) <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
                     type="text"
+                    required
                     name="guard_id"
                     id="guard_id"
                     value={formData.guard_id}
@@ -470,7 +478,7 @@ export function GuardAdd() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="date_hired" className="block text-sm font-medium leading-6 text-slate-900">
-                  Date Hired *
+                  Date Hired <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
@@ -504,7 +512,7 @@ export function GuardAdd() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="password" className="block text-sm font-medium leading-6 text-slate-900">
-                  System Password *
+                  System Password <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input

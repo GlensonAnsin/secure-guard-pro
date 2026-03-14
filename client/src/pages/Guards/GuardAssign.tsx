@@ -154,7 +154,7 @@ export function GuardAssign() {
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-3">
                 <label htmlFor="company_id" className="block text-sm font-medium leading-6 text-slate-900">
-                  Select Company *
+                  Select Company <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -194,7 +194,7 @@ export function GuardAssign() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="day_start" className="block text-sm font-medium leading-6 text-slate-900">
-                  Work Days Start *
+                  Work Days Start <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -217,7 +217,7 @@ export function GuardAssign() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="day_end" className="block text-sm font-medium leading-6 text-slate-900">
-                  Work Days End *
+                  Work Days End <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -240,7 +240,7 @@ export function GuardAssign() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="shift_in" className="block text-sm font-medium leading-6 text-slate-900">
-                  Shift In (Start Time) *
+                  Shift In (Start Time) <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
@@ -257,7 +257,7 @@ export function GuardAssign() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="shift_out" className="block text-sm font-medium leading-6 text-slate-900">
-                  Shift Out (End Time) *
+                  Shift Out (End Time) <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
@@ -274,7 +274,7 @@ export function GuardAssign() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="date_assigned" className="block text-sm font-medium leading-6 text-slate-900">
-                  Date Assigned *
+                  Date Assigned <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input

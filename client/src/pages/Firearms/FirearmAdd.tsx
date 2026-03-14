@@ -140,7 +140,7 @@ export function FirearmAdd() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="makeModel" className="block text-sm font-medium leading-6 text-slate-900">
-                  Make & Model *
+                  Make & Model <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <select
@@ -162,7 +162,7 @@ export function FirearmAdd() {
 
               <div className="sm:col-span-6">
                 <label htmlFor="serial_num" className="block text-sm font-medium leading-6 text-slate-900">
-                  Serial Number *
+                  Serial Number <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input
@@ -195,7 +195,7 @@ export function FirearmAdd() {
 
               <div className="sm:col-span-3">
                 <label htmlFor="exp_of_registration" className="block text-sm font-medium leading-6 text-slate-900">
-                  License Expiration Date *
+                  License Expiration Date <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input

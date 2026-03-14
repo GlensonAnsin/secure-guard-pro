@@ -14,7 +14,7 @@ import {
   ChevronRight,
   Loader2,
   ArrowRightLeft,
-  Trash2,
+  Archive,
   XCircle,
   Clock10,
   ShieldMinus
@@ -66,7 +66,7 @@ export function FirearmsList() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this firearm? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to archive this firearm?')) {
       setIsDeleting(id);
       try {
         const res = await firearmService.delete(id) as any;
@@ -111,12 +111,12 @@ export function FirearmsList() {
 
   const getAssignedTo = (fa: any) => {
     if (!fa.is_available && fa.issuances && fa.issuances.length > 0) {
-      // Find the active issuance or the latest one
       const activeIssuance = fa.issuances.find((i: any) => !i.turn_in_date) || fa.issuances[0];
+      
       if (activeIssuance?.user) {
         return `${activeIssuance.user.first_name} ${activeIssuance.user.last_name}`;
       }
-      return `User ID: ${activeIssuance.user_id}`;
+      return activeIssuance.user_id ? `User ID: ${activeIssuance.user_id}` : 'Unknown User';
     }
     return '-';
   };
@@ -124,11 +124,16 @@ export function FirearmsList() {
   return (
     <div className="space-y-6 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Firearms Inventory</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Manage all registered firearms, registration expiry, and availability.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <Crosshair className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Firearms Inventory</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Manage all registered firearms, registration expiry, and availability.
+            </p>
+          </div>
         </div>
         <Link
           to="/firearms/add"
@@ -147,8 +152,26 @@ export function FirearmsList() {
                 <p className="text-sm font-medium text-slate-500">{stat.name}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{stat.value}</p>
               </div>
-              <div className="rounded-md bg-blue-50 p-2 border border-slate-100">
-                <stat.icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
+              <div className={`rounded-md p-2 border ${
+                stat.name === 'Total Firearms' ? 'bg-indigo-50 border-indigo-100' :
+                stat.name === 'Issued' ? 'bg-blue-50 border-blue-100' :
+                stat.name === 'Available' ? 'bg-green-50 border-green-100' :
+                stat.name === 'Maintenance' ? 'bg-yellow-50 border-yellow-100' :
+                stat.name === 'Expiring' ? 'bg-amber-50 border-amber-100' :
+                stat.name === 'Expired' ? 'bg-red-50 border-red-100' :
+                stat.name === 'Damaged' ? 'bg-orange-50 border-orange-100' :
+                'bg-slate-50 border-slate-100'
+              }`}>
+                <stat.icon className={`h-6 w-6 ${
+                  stat.name === 'Total Firearms' ? 'text-indigo-600' :
+                  stat.name === 'Issued' ? 'text-blue-600' :
+                  stat.name === 'Available' ? 'text-green-600' :
+                  stat.name === 'Maintenance' ? 'text-yellow-600' :
+                  stat.name === 'Expiring' ? 'text-amber-600' :
+                  stat.name === 'Expired' ? 'text-red-600' :
+                  stat.name === 'Damaged' ? 'text-orange-600' :
+                  'text-slate-600'
+                }`} aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -298,11 +321,10 @@ export function FirearmsList() {
                           {fa.is_available && (
                             <Link
                               to={`/issuance/issue?firearm_id=${fa.id}`}
-                              className="text-[#135dff] hover:text-[#135dff]/80 transition-colors flex items-center gap-1"
+                              className="text-slate-400 hover:text-[#135dff] transition-colors flex items-center"
                               title="Assign Firearm"
                             >
-                              <ArrowRightLeft className="h-4 w-4" />
-                              <span className="hidden lg:inline text-xs mt-0.5">Assign</span>
+                              <ArrowRightLeft className="h-5 w-5" />
                             </Link>
                           )}
                           <Link
@@ -316,12 +338,12 @@ export function FirearmsList() {
                             onClick={() => handleDelete(fa.id)}
                             disabled={isDeleting === fa.id}
                             className="text-slate-400 hover:text-red-500 transition-colors flex items-center cursor-pointer disabled:opacity-50"
-                            title="Delete Firearm"
+                            title="Archive Firearm"
                           >
                             {isDeleting === fa.id ? (
                               <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
-                              <Trash2 className="h-5 w-5" />
+                              <Archive className="h-5 w-5" />
                             )}
                           </button>
                         </div>

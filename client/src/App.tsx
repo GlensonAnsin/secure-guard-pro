@@ -84,16 +84,15 @@ function App() {
           <Route path="companies" element={<CompaniesList />} />
           <Route path="companies/:id/guards" element={<CompanyGuards />} />
 
-          {/* Admin/HR routes */}
-          <Route path="firearms" element={<AdminOrHRRoute><FirearmsList /></AdminOrHRRoute>} />
+          {/* Admin only routes */}
+          <Route path="firearms" element={<AdminRoute><FirearmsList /></AdminRoute>} />
           <Route path="firearms/add" element={<AdminRoute><FirearmAdd /></AdminRoute>} />
           <Route path="firearms/:id/edit" element={<AdminRoute><FirearmEdit /></AdminRoute>} />
-          <Route path="issuance" element={<AdminOrHRRoute><IssuanceList /></AdminOrHRRoute>} />
+          <Route path="issuance" element={<AdminRoute><IssuanceList /></AdminRoute>} />
           <Route path="issuance/issue" element={<AdminRoute><IssueFirearm /></AdminRoute>} />
-          <Route path="reports" element={<AdminOrHRRoute><ReportsPage /></AdminOrHRRoute>} />
+          <Route path="reports" element={<AdminRoute><ReportsPage /></AdminRoute>} />
           <Route path="shift-rotation" element={<AdminOrHRRoute><ShiftRotationPage /></AdminOrHRRoute>} />
 
-          {/* Admin only routes */}
           <Route path="user-management" element={<AdminRoute><UserManagementPage /></AdminRoute>} />
           <Route path="archive" element={<AdminRoute><ArchivePage /></AdminRoute>} />
 

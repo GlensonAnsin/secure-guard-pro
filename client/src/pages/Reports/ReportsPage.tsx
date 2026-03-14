@@ -120,7 +120,7 @@ export function ReportsPage() {
         </div>
         <button
           onClick={handleDownload}
-          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95 gap-2"
+          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95 gap-2 cursor-pointer"
         >
           <Download className="h-4 w-4" />
           Export CSV
@@ -139,7 +139,7 @@ export function ReportsPage() {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={`
-                    group relative min-w-[120px] flex items-center justify-center gap-2 py-4 px-6 text-sm font-medium transition-all
+                    group relative min-w-[120px] flex items-center justify-center gap-2 py-4 px-6 text-sm font-medium transition-all cursor-pointer
                     ${isActive 
                       ? 'text-blue-600 border-b-2 border-blue-600 bg-white' 
                       : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 border-b-2 border-transparent'
@@ -172,7 +172,7 @@ export function ReportsPage() {
                     type="date"
                     value={filters.dateFrom}
                     onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                    className="block rounded-lg border-slate-200 pl-10 pr-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50"
+                    className="block rounded-lg border border-slate-200 pl-10 pr-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50"
                   />
                 </div>
                 <div className="flex items-center text-slate-400 text-xs px-1">to</div>
@@ -184,19 +184,18 @@ export function ReportsPage() {
                     type="date"
                     value={filters.dateTo}
                     onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                    className="block rounded-lg border-slate-200 pl-10 pr-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50"
+                    className="block rounded-lg border border-slate-200 pl-10 pr-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50"
                   />
                 </div>
               </div>
             )}
 
             {activeTab === 'attendance' && (
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Company</label>
+              <div className="relative">
                 <select
                   value={filters.companyId}
                   onChange={(e) => setFilters({ ...filters, companyId: e.target.value })}
-                  className="block w-full rounded-lg border-slate-200 py-2 pl-3 pr-10 text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all"
+                  className="block w-64 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 cursor-pointer"
                 >
                   <option value="">All Companies</option>
                   {companies.map((c) => (
@@ -212,7 +211,7 @@ export function ReportsPage() {
                   <select
                     value={filters.firearmType}
                     onChange={(e) => setFilters({ ...filters, firearmType: e.target.value })}
-                    className="block w-40 rounded-lg border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 appearance-none"
+                    className="block w-40 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 cursor-pointer"
                   >
                     <option value="">All Types</option>
                     <option value=".38 Revolver">.38 Revolver</option>
@@ -225,7 +224,7 @@ export function ReportsPage() {
                   <select
                     value={filters.firearmStatus}
                     onChange={(e) => setFilters({ ...filters, firearmStatus: e.target.value })}
-                    className="block w-40 rounded-lg border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 appearance-none"
+                    className="block w-40 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 cursor-pointer"
                   >
                     <option value="">All Statuses</option>
                     <option value="available">Available</option>
@@ -244,7 +243,7 @@ export function ReportsPage() {
                 <select
                   value={filters.companyStatus}
                   onChange={(e) => setFilters({ ...filters, companyStatus: e.target.value })}
-                  className="block w-40 rounded-lg border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 appearance-none"
+                  className="block w-40 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-slate-50/50 cursor-pointer"
                 >
                   <option value="">All Statuses</option>
                   <option value="true">Active</option>
@@ -255,7 +254,7 @@ export function ReportsPage() {
 
             <button
               onClick={fetchReport}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition-all active:scale-95"
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition-all active:scale-95 cursor-pointer"
             >
               <Search className="h-4 w-4" />
               Apply

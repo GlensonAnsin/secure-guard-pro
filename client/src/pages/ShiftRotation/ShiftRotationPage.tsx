@@ -65,8 +65,8 @@ export function ShiftRotationPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-indigo-50 p-2.5 border border-indigo-100 shadow-sm">
-            <RotateCw className="h-6 w-6 text-indigo-600" />
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <RotateCw className="h-6 w-6 text-blue-600" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">Shift Rotation</h1>
@@ -78,7 +78,7 @@ export function ShiftRotationPage() {
         {isAdmin && (
           <button
             onClick={handleAutoRotate}
-            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-all active:scale-95 gap-2"
+            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-all active:scale-95 gap-2 cursor-pointer"
           >
             <RotateCw className="h-4 w-4" />
             Run Auto-Rotation
@@ -170,7 +170,7 @@ export function ShiftRotationPage() {
                         onClick={() => handleManualRotate(s.company_id)} 
                         disabled={s.guard_count < 2}
                         className={`
-                          inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all
+                          inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer
                           ${s.guard_count < 2 
                             ? 'bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-200' 
                             : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 active:scale-95'

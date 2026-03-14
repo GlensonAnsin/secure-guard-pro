@@ -9,7 +9,7 @@ import {
   Shield, 
   MapPin, 
   Edit, 
-  Trash2, 
+  Archive, 
   ChevronLeft, 
   ChevronRight, 
   Loader2,
@@ -19,7 +19,15 @@ import {
   Contact,
   CheckCircle2,
 } from 'lucide-react';
+import axios from 'axios';
 import { userManagementService } from '../../services/userManagementService';
+
+const formatCityName = (name: string) => {
+  if (name && name.toLowerCase().startsWith('city of ')) {
+    return name.substring(8) + ' City';
+  }
+  return name;
+};
 
 export function UserManagementPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -31,13 +39,34 @@ export function UserManagementPage() {
   const [editingUser, setEditingUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     first_name: '', middle_name: '', last_name: '', email: '', username: '',
-    password: '', role_slug: 'hr',
+    password: '', role_slug: 'hr', street: '',
     barangay: '', city_or_municipality: '', province: '', region: '',
+    date_hired: new Date().toISOString().split('T')[0],
   });
+
+  const [regions, setRegions] = useState<any[]>([]);
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [barangays, setBarangays] = useState<any[]>([]);
+
+  const [selectedRegionCode, setSelectedRegionCode] = useState('');
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState('');
+  const [selectedCityCode, setSelectedCityCode] = useState('');
+  const [selectedBarangayCode, setSelectedBarangayCode] = useState('');
+  const [isAddrLoading, setIsAddrLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     fetchUsers();
   }, [page, search]);
+
+  useEffect(() => {
+    axios.get('https://psgc.gitlab.io/api/regions/')
+      .then((res) => {
+        setRegions(res.data.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+      })
+      .catch((err) => console.error('Failed to fetch regions:', err));
+  }, []);
 
   const fetchUsers = async () => {
     try {
@@ -65,31 +94,214 @@ export function UserManagementPage() {
       setEditingUser(null);
       resetForm();
       fetchUsers();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to save user');
+      const message = err.response?.data?.message || err.message || 'Failed to save user';
+      alert(message);
     }
+  };
+
+  const handleRegionChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    setSelectedRegionCode(code);
+    setSelectedProvinceCode('');
+    setSelectedCityCode('');
+    setSelectedBarangayCode('');
+    setCities([]);
+    setProvinces([]);
+    setBarangays([]);
+
+    const region = regions.find((r) => r.code === code);
+    setFormData((prev) => ({
+      ...prev,
+      region: region ? region.name : '',
+      province: '',
+      city_or_municipality: '',
+      barangay: '',
+    }));
+
+    if (code) {
+      try {
+        const provRes = await axios.get(`https://psgc.gitlab.io/api/regions/${code}/provinces/`);
+        const provData = provRes.data;
+
+        if (provData && provData.length > 0) {
+          setProvinces(provData.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+        } else {
+          setProvinces([{ code: 'NCR_DIRECT', name: 'Metro Manila (Direct)' }]);
+          const cityRes = await axios.get(`https://psgc.gitlab.io/api/regions/${code}/cities-municipalities/`);
+          const cityData = cityRes.data;
+          const formattedCities = cityData.map((c: any) => ({ ...c, name: formatCityName(c.name) }));
+          setCities(formattedCities.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleProvinceChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    setSelectedProvinceCode(code);
+    setSelectedCityCode('');
+    setSelectedBarangayCode('');
+    setCities([]);
+    setBarangays([]);
+
+    if (code === 'NCR_DIRECT') {
+      setFormData((prev) => ({ ...prev, province: 'Metro Manila', city_or_municipality: '', barangay: '' }));
+      try {
+        const cityRes = await axios.get(`https://psgc.gitlab.io/api/regions/${selectedRegionCode}/cities-municipalities/`);
+        const cityData = cityRes.data;
+        const formattedCities = cityData.map((c: any) => ({ ...c, name: formatCityName(c.name) }));
+        setCities(formattedCities.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+      } catch (err) {
+        console.error(err);
+      }
+      return;
+    }
+
+    const province = provinces.find((p) => p.code === code);
+    setFormData((prev) => ({
+      ...prev,
+      province: province ? province.name : '',
+      city_or_municipality: '',
+      barangay: '',
+    }));
+
+    if (code) {
+      try {
+        const cityRes = await axios.get(`https://psgc.gitlab.io/api/provinces/${code}/cities-municipalities/`);
+        const cityData = cityRes.data;
+        const formattedCities = cityData.map((c: any) => ({ ...c, name: formatCityName(c.name) }));
+        setCities(formattedCities.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleCityChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    setSelectedCityCode(code);
+    setSelectedBarangayCode('');
+    setBarangays([]);
+
+    const city = cities.find((c) => c.code === code);
+    if (city) {
+      setFormData((prev) => ({
+        ...prev,
+        city_or_municipality: city.name,
+        barangay: '',
+      }));
+
+      try {
+        const brgyRes = await axios.get(`https://psgc.gitlab.io/api/cities-municipalities/${code}/barangays/`);
+        const brgyData = brgyRes.data;
+        setBarangays(brgyData.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        city_or_municipality: '',
+        barangay: '',
+      }));
+    }
+  };
+
+  const handleBarangayChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const code = e.target.value;
+    setSelectedBarangayCode(code);
+
+    const brgy = barangays.find((b) => b.code === code);
+    setFormData((prev) => ({
+      ...prev,
+      barangay: brgy ? brgy.name : '',
+    }));
   };
 
   const resetForm = () => {
     setFormData({
       first_name: '', middle_name: '', last_name: '', email: '', username: '',
-      password: '', role_slug: 'hr',
+      password: '', role_slug: 'hr', street: '',
       barangay: '', city_or_municipality: '', province: '', region: '',
+      date_hired: new Date().toISOString().split('T')[0],
     });
+    setSelectedRegionCode('');
+    setSelectedProvinceCode('');
+    setSelectedCityCode('');
+    setSelectedBarangayCode('');
+    setProvinces([]);
+    setCities([]);
+    setBarangays([]);
+    setShowPassword(false);
   };
 
-  const handleEdit = (user: any) => {
+  const handleEdit = async (user: any) => {
     setEditingUser(user);
     const role = user.userRoles?.[0]?.role?.slug || 'hr';
     setFormData({
       first_name: user.first_name || '', middle_name: user.middle_name || '',
       last_name: user.last_name || '', email: user.email || '',
       username: user.username || '', password: '', role_slug: role,
+      street: user.street || '',
       barangay: user.barangay || '', city_or_municipality: user.city_or_municipality || '',
       province: user.province || '', region: user.region || '',
+      date_hired: user.date_hired || new Date().toISOString().split('T')[0],
     });
     setShowForm(true);
+
+    // PSGC Reverse Lookup
+    if (user.region) {
+      setIsAddrLoading(true);
+      try {
+        const r = regions.find((reg: any) => reg.name === user.region);
+        if (r) {
+          const rCode = r.code;
+          setSelectedRegionCode(rCode);
+
+          const provsRes = await axios.get(`https://psgc.gitlab.io/api/regions/${rCode}/provinces/`);
+          const provsData = provsRes.data;
+          const sortedProvs = provsData?.length > 0 
+            ? provsData.sort((a: any, b: any) => a.name.localeCompare(b.name))
+            : [{ code: 'NCR_DIRECT', name: 'Metro Manila (Direct)' }];
+          setProvinces(sortedProvs);
+
+          const pMatch = sortedProvs.find((p: any) => p.name === user.province || (user.province === 'Metro Manila' && p.code === 'NCR_DIRECT'));
+          if (pMatch) {
+            const pCode = pMatch.code;
+            setSelectedProvinceCode(pCode);
+
+            const citiesRes = pCode === 'NCR_DIRECT'
+              ? await axios.get(`https://psgc.gitlab.io/api/regions/${rCode}/cities-municipalities/`)
+              : await axios.get(`https://psgc.gitlab.io/api/provinces/${pCode}/cities-municipalities/`);
+            
+            const sortedCities = citiesRes.data.map((c: any) => ({ ...c, name: formatCityName(c.name) }))
+              .sort((a: any, b: any) => a.name.localeCompare(b.name));
+            setCities(sortedCities);
+
+            const cMatch = sortedCities.find((c: any) => c.name === user.city_or_municipality);
+            if (cMatch) {
+              const cCode = cMatch.code;
+              setSelectedCityCode(cCode);
+
+              const brgyRes = await axios.get(`https://psgc.gitlab.io/api/cities-municipalities/${cCode}/barangays/`);
+              const sortedBrgy = brgyRes.data.sort((a: any, b: any) => a.name.localeCompare(b.name));
+              setBarangays(sortedBrgy);
+
+              const bMatch = sortedBrgy.find((b: any) => b.name === user.barangay);
+              if (bMatch) setSelectedBarangayCode(bMatch.code);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Reverse lookup failed:', err);
+      } finally {
+        setIsAddrLoading(false);
+      }
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -124,8 +336,8 @@ export function UserManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-slate-100 p-2.5 border border-slate-200 shadow-sm">
-            <Users className="h-6 w-6 text-slate-700" />
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <Users className="h-6 w-6 text-blue-600" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">User Management</h1>
@@ -136,7 +348,7 @@ export function UserManagementPage() {
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingUser(null); resetForm(); }}
-          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95 gap-2"
+          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-all active:scale-95 gap-2 cursor-pointer"
         >
           <UserPlus className="h-4 w-4" />
           Add User
@@ -190,7 +402,7 @@ export function UserManagementPage() {
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-slate-900">{user.first_name} {user.last_name}</div>
-                        <div className="text-xs text-slate-500">@{user.username}</div>
+                        <div className="text-xs text-slate-500">{user.username}</div>
                       </div>
                     </div>
                   </td>
@@ -215,17 +427,17 @@ export function UserManagementPage() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleEdit(user)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                         title="Edit User"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete User"
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Archive User"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Archive className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -314,12 +526,14 @@ export function UserManagementPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">First Name</label>
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                     placeholder="John"
                     required
                   />
@@ -330,17 +544,22 @@ export function UserManagementPage() {
                     type="text"
                     value={formData.middle_name}
                     onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                     placeholder="Quincy"
+                    minLength={2}
+                    pattern="^[a-zA-Z]{2,}$"
+                    title="Middle name must be at least 2 characters and no initials."
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Last Name</label>
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                     placeholder="Doe"
                     required
                   />
@@ -355,26 +574,30 @@ export function UserManagementPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Email Address</label>
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                      className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                       placeholder="john.doe@example.com"
                       required
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Username</label>
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Username <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all text-blue-600 font-medium"
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                     placeholder="jdoe2024"
                     required
                   />
@@ -384,7 +607,7 @@ export function UserManagementPage() {
                   <select
                     value={formData.role_slug}
                     onChange={(e) => setFormData({ ...formData, role_slug: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all appearance-none bg-slate-50/50"
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all appearance-none bg-slate-50/50 px-2"
                   >
                     <option value="admin">Administrator</option>
                     <option value="hr">Human Resources</option>
@@ -398,65 +621,118 @@ export function UserManagementPage() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                      className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                       placeholder="••••••••"
                       {...(!editingUser ? { required: true } : {})}
                     />
+                  </div>
+                  <div className="mt-2 flex items-center">
+                    <input
+                      id="show-password"
+                      type="checkbox"
+                      checked={showPassword}
+                      onChange={(e) => setShowPassword(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                    />
+                    <label
+                      htmlFor="show-password"
+                      className="ml-2 block text-sm text-slate-900 select-none cursor-pointer"
+                    >
+                      Show Password
+                    </label>
                   </div>
                 </div>
 
                 <div className="md:col-span-3">
                   <div className="h-px bg-slate-100 my-2" />
-                  <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4">
-                    <MapPin className="h-4 w-4 text-blue-500" />
-                    Permanent Address
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-blue-500" />
+                      Permanent Address
+                    </h3>
+                    {isAddrLoading && (
+                      <div className="flex items-center gap-2 text-xs text-blue-600 animate-pulse">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Initializing address...
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Barangay</label>
-                  <input
-                    type="text"
-                    value={formData.barangay}
-                    onChange={(e) => setFormData({ ...formData, barangay: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Region <span className="text-red-500">*</span></label>
+                  <select
                     required
-                  />
+                    value={selectedRegionCode}
+                    onChange={handleRegionChange}
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                  >
+                    <option value="">Select Region</option>
+                    {regions.map((r) => (
+                      <option key={r.code} value={r.code}>{r.name}</option>
+                    ))}
+                  </select>
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">City / Municipality</label>
-                  <input
-                    type="text"
-                    value={formData.city_or_municipality}
-                    onChange={(e) => setFormData({ ...formData, city_or_municipality: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                   <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Province <span className="text-red-500">*</span></label>
+                  <select
                     required
-                  />
+                    value={selectedProvinceCode}
+                    onChange={handleProvinceChange}
+                    disabled={!selectedRegionCode}
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value="">Select Province</option>
+                    {provinces.map((p) => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                  </select>
                 </div>
-                <div className="space-y-2 text-xs text-slate-400 flex items-end pb-2">
-                  <span>Enter regional details carefully.</span>
-                </div>
+
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Province</label>
-                  <input
-                    type="text"
-                    value={formData.province}
-                    onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">City / Municipality <span className="text-red-500">*</span></label>
+                  <select
                     required
-                  />
+                    value={selectedCityCode}
+                    onChange={handleCityChange}
+                    disabled={!selectedProvinceCode}
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value="">Select City / Municipality</option>
+                    {cities.map((c) => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
+
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Region</label>
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Barangay <span className="text-red-500">*</span></label>
+                  <select
+                    required
+                    value={selectedBarangayCode}
+                    onChange={handleBarangayChange}
+                    disabled={!selectedCityCode}
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value="">Select Barangay</option>
+                    {barangays.map((b) => (
+                      <option key={b.code} value={b.code}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Street Address</label>
                   <input
                     type="text"
-                    value={formData.region}
-                    onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all"
-                    required
+                    value={formData.street}
+                    onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                    placeholder="Unit/House No., Building, Street Name"
                   />
                 </div>
               </div>
@@ -466,13 +742,13 @@ export function UserManagementPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="rounded-lg px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all active:scale-95"
+                  className="rounded-lg px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all active:scale-95 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95 cursor-pointer"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   {editingUser ? 'Update Profile' : 'Create User'}

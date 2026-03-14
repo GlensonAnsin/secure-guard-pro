@@ -12,8 +12,10 @@ import Limiter from './src/middlewares/Limiter.js';
 import Maintenance from './src/middlewares/Maintenance.js';
 import RequestLogger from './src/middlewares/RequestLogger.js';
 import env from './src/config/env.js';
+import Scheduler from './src/utils/Scheduler.ts';
 
 const app: Application = express();
+Scheduler.init();
 const PORT = env.APP_PORT;
 
 // ==========================

@@ -7,8 +7,8 @@ import {
   Search,
   Plus,
   Edit,
-  Trash2,
-  Eye,
+  Archive, 
+  Eye, 
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -99,7 +99,7 @@ export function CompaniesList() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to archive this company?')) {
       setIsDeleting(id);
       try {
         await companyService.delete(id);
@@ -117,9 +117,14 @@ export function CompaniesList() {
   return (
     <div className="space-y-6 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Companies</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage client locations and assignment destinations.</p>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <Building2 className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Companies</h1>
+            <p className="mt-1 text-sm text-slate-500">Manage client locations and assignment destinations.</p>
+          </div>
         </div>
         {isAdmin && (
           <button
@@ -128,7 +133,7 @@ export function CompaniesList() {
               setEditingCompany(null);
               setFormData({ name: '', address: '', note: '', is_active: true });
             }}
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors cursor-pointer"
           >
             <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             Add Company
@@ -236,7 +241,7 @@ export function CompaniesList() {
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => navigate(`/companies/${company.id}/guards`)}
-                          className="text-slate-400 hover:text-blue-600 transition-colors"
+                          className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
                           title="View Guards"
                         >
                           <Eye className="h-5 w-5" />
@@ -245,7 +250,7 @@ export function CompaniesList() {
                           <>
                             <button
                               onClick={() => handleEdit(company)}
-                              className="text-slate-400 hover:text-blue-600 transition-colors"
+                              className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
                               title="Edit Company"
                             >
                               <Edit className="h-5 w-5" />
@@ -253,13 +258,13 @@ export function CompaniesList() {
                             <button
                               onClick={() => handleDelete(company.id)}
                               disabled={isDeleting === company.id}
-                              className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
-                              title="Delete Company"
+                              className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50 "
+                              title="Archive Company"
                             >
                               {isDeleting === company.id ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                               ) : (
-                                <Trash2 className="h-5 w-5" />
+                                <Archive className="h-5 w-5" />
                               )}
                             </button>
                           </>
@@ -407,7 +412,7 @@ export function CompaniesList() {
                     value={formData.note}
                     onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                     rows={2}
-                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white"
+                    className="block w-full rounded-md border-0 py-1.5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white px-2"
                     placeholder="Internal reference or special instructions..."
                   />
                 </div>

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { Op } from 'sequelize';
 import User from '../models/User.js';
 import Role from '../models/Role.js';
 import UserRole from '../models/UserRole.js';
@@ -22,8 +23,8 @@ class AuthService {
   /**
    * Authenticate user and return access + refresh tokens.
    */
-  public async login(email: string, password: string) {
-    const user = await User.findOne({ where: { email } });
+  public async login(username: string, password: string) {
+    const user = await User.findOne({ where: { username } });
 
     if (!user || !(await Hash.check(password, user.password))) {
       throw new Error('Invalid credentials');
@@ -182,7 +183,7 @@ class AuthService {
       throw new Error('Incorrect current password');
     }
 
-    user.password = await Hash.make(newPassword);
+    user.password = newPassword;
     await user.save();
 
     return { success: true };

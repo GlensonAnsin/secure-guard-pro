@@ -71,7 +71,7 @@ export function IssueFirearm() {
 
         if (allFirearms.length > 0) {
           const availableFirearms = allFirearms.filter(
-            (f: any) => f.status === 'available' || f.status === 'Available',
+            (f: any) => f.is_available === true || f.is_available === 1,
           );
 
           if (initialFirearmId) {
@@ -178,7 +178,7 @@ export function IssueFirearm() {
                 {!selectedGuard ? (
                   <div>
                     <label htmlFor="guard_search" className="block text-sm font-medium leading-6 text-slate-900">
-                      Search Guard by ID or Name
+                      Search Guard by ID or Name <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-2 flex gap-2">
                       <input
@@ -289,7 +289,7 @@ export function IssueFirearm() {
                 </h2>
                 <div>
                   <label htmlFor="firearm_id" className="block text-sm font-medium leading-6 text-slate-900">
-                    Available Firearms
+                    Available Firearms <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-2">
                     <select
@@ -323,7 +323,7 @@ export function IssueFirearm() {
 
               <div className="sm:col-span-2">
                 <label htmlFor="date_of_issuance" className="block text-sm font-medium leading-6 text-slate-900">
-                  Issuance Date
+                  Issuance Date <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-2">
                   <input

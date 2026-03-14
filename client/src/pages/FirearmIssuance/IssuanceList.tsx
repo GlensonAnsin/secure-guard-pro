@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, ArrowRightLeft, Eye, ChevronLeft, ChevronRight, Loader2, Filter, Trash2 } from 'lucide-react';
+import { Search, Plus, ArrowRightLeft, Eye, ChevronLeft, ChevronRight, Loader2, Filter, Archive } from 'lucide-react';
 import { issuanceService } from '../../services/issuanceService';
 
 export function IssuanceList() {
@@ -68,7 +68,7 @@ export function IssuanceList() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this issuance record? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to archive this issuance record?')) {
       setIsDeleting(id);
       try {
         const res = await issuanceService.delete(id) as any;
@@ -87,11 +87,16 @@ export function IssuanceList() {
   return (
     <div className="space-y-6 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Firearm Issuance Log</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Track and monitor which guards hold what firearms, and log their return.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5 border border-blue-100 shadow-sm">
+            <ArrowRightLeft className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Firearm Issuance Log</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Track and monitor which guards hold what firearms, and log their return.
+            </p>
+          </div>
         </div>
         <Link
           to="/issuance/issue"
@@ -214,7 +219,7 @@ export function IssuanceList() {
                           {isActive ? 'Active' : 'Returned'}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{issue.note}</td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{issue.note || '-'}</td>
                       <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                         <div className="flex justify-end gap-3">
                           {isActive && (
@@ -242,12 +247,12 @@ export function IssuanceList() {
                             onClick={() => handleDelete(issue.id)}
                             disabled={isDeleting === issue.id}
                             className="text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                            title="Delete Record"
+                            title="Archive Record"
                           >
                             {isDeleting === issue.id ? (
                               <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
-                              <Trash2 className="h-5 w-5" />
+                              <Archive className="h-5 w-5" />
                             )}
                           </button>
                         </div>

@@ -51,7 +51,7 @@ class UserFactory extends Factory<User> {
       email: faker.internet.email(),
       cel_num: `09${faker.string.numeric(9)}`,
       username: faker.internet.username(),
-      password: '$2b$10$YourHashedPasswordHere',
+      password: 'password',
       is_available: true,
       is_on_leave: false,
       is_resigned: false,
