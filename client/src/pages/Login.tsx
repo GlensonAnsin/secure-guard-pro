@@ -61,14 +61,14 @@ export function Login() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium leading-6 text-slate-900">
-                Email address <span className="text-red-500">*</span>
+                Email or Username <span className="text-red-500">*</span>
               </label>
               <div className="mt-2">
                 <input
                   id="email"
                   name="email"
-                  type="email"
-                  autoComplete="email"
+                  type="text"
+                  autoComplete="username"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

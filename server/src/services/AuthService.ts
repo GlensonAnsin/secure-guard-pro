@@ -24,7 +24,14 @@ class AuthService {
    * Authenticate user and return access + refresh tokens.
    */
   public async login(username: string, password: string) {
-    const user = await User.findOne({ where: { username } });
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username: username },
+          { email: username }
+        ]
+      }
+    });
 
     if (!user || !(await Hash.check(password, user.password))) {
       throw new Error('Invalid credentials');
