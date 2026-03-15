@@ -8,19 +8,24 @@ class ShiftRotationService {
    * Auto-rotate shifts for all companies where last_shift_changes >= 7 days ago.
    * Guards at the same company swap shifts with each other.
    */
-  public async rotateShifts() {
+  public async rotateShifts(force: boolean = false) {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     // Find all active designations that need rotation
+    const whereClause: any = {
+      is_active: true,
+    };
+
+    if (!force) {
+      whereClause[Op.or] = [
+        { last_shift_changes: { [Op.lte]: sevenDaysAgo } },
+        { last_shift_changes: null },
+      ];
+    }
+
     const designationsToRotate = await Designation.findAll({
-      where: {
-        is_active: true,
-        [Op.or]: [
-          { last_shift_changes: { [Op.lte]: sevenDaysAgo } },
-          { last_shift_changes: null },
-        ],
-      },
+      where: whereClause,
       order: [['company_id', 'ASC'], ['id', 'ASC']],
     });
 

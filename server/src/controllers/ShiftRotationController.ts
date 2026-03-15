@@ -8,7 +8,7 @@ class ShiftRotationController {
    */
   public async rotate(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await ShiftRotationService.rotateShifts();
+      const result = await ShiftRotationService.rotateShifts(true);
       return ApiResponse.success(res, result, 'Shift rotation completed successfully');
     } catch (error) {
       next(error);

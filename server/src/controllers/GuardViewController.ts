@@ -27,7 +27,7 @@ class GuardViewController {
                 return ApiResponse.error(res, 'Status is required and must be a string', 400);
             }
 
-            const validStatuses = ['available', 'on_leave', 'assigned', 'resigned', 'active', 'inactive'];
+            const validStatuses = ['available', 'on_leave', 'not_on_leave', 'assigned', 'resigned', 'active', 'inactive'];
             if (!validStatuses.includes(status)) {
                 return ApiResponse.error(res, `Invalid status. Must be one of: ${validStatuses.join(', ')}`, 400);
             }

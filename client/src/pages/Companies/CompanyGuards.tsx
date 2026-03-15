@@ -60,6 +60,15 @@ export function CompanyGuards() {
     }
   };
 
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    const [hourStr, minuteStr] = timeString.split(':');
+    const hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour.toString().padStart(2, '0')}:${minuteStr} ${ampm}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -167,7 +176,7 @@ export function CompanyGuards() {
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5 text-slate-400" />
-                          <span className="font-medium">{guard.shift_in} - {guard.shift_out}</span>
+                          <span className="font-medium">{formatTime(guard.shift_in)} - {formatTime(guard.shift_out)}</span>
                         </div>
                         <p className="text-xs text-slate-500 pl-5">Work Days: {guard.day_start} - {guard.day_end}</p>
                       </div>

@@ -96,8 +96,8 @@ class ReportService {
       if (a.is_present) statuses.push('Present');
       if (a.is_late) statuses.push('Late');
       if (a.is_early_out) statuses.push('Early Out');
-      if (a.is_on_leave) statuses.push('On Leave');
-      if (statuses.length === 0 && !a.time_out) statuses.push('On Duty');
+      if (a.note === 'On Leave') statuses.push('On Leave');
+      if (statuses.length === 0 && !a.time_out && a.note !== 'On Leave') statuses.push('On Duty');
 
       return {
         date: a.time_in,

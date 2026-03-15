@@ -14,7 +14,6 @@ class AttendanceFactory extends Factory<Attendance> {
     let is_present = false;
     let is_late = false;
     let is_early_out = false;
-    let is_on_leave = false;
 
     if (hasTimedOut) {
       hoursWorked = faker.number.int({ min: 1, max: 12 });
@@ -34,9 +33,18 @@ class AttendanceFactory extends Factory<Attendance> {
       is_present = false;
       is_late = false;
       is_early_out = false;
-      is_on_leave = true;
       timeOut = new Date(timeIn.getTime() + (8 * 60 * 60 * 1000));
       hoursWorked = 0;
+      return {
+        designation_id: 1,
+        time_in: timeIn,
+        time_out: timeOut,
+        hours_worked: hoursWorked,
+        is_present,
+        is_late,
+        is_early_out,
+        note: 'On Leave',
+      };
     }
 
     return {
@@ -47,7 +55,6 @@ class AttendanceFactory extends Factory<Attendance> {
       is_present,
       is_late,
       is_early_out,
-      is_on_leave,
       note: faker.datatype.boolean() ? faker.lorem.sentence() : null,
     };
   }

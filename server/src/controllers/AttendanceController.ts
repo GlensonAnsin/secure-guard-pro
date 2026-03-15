@@ -60,9 +60,16 @@ class AttendanceController {
         const statuses: string[] = [];
         if (record.is_present) statuses.push('Present');
         if (record.is_late) statuses.push('Late');
+        if (record.is_early_in) statuses.push('Early In');
         if (record.is_early_out) statuses.push('Early Out');
-        if (record.is_on_leave) statuses.push('On Leave');
-        if (statuses.length === 0 && !record.time_out) statuses.push('On Duty');
+        if (record.note === 'On Leave') statuses.push('On Leave');
+        if (statuses.length === 0) {
+          if (!record.time_out) {
+            statuses.push('On Duty');
+          } else if (!record.is_present) {
+            statuses.push('Absent');
+          }
+        }
         const statusStr = statuses.join(', ');
 
         csv += `"${dateStr}","${guardId}","${guardName}","${location}","${timeInStr}","${timeOutStr}","${record.hours_worked || ''}","${statusStr}","${cleanNote}"\n`;

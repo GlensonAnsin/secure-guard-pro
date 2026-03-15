@@ -16,7 +16,9 @@ export interface User {
   region: string;
   email: string | null;
   cel_num: string | null;
-  status: string;
+  is_available: boolean;
+  is_on_leave: boolean;
+  is_resigned: boolean;
   date_hired: string;
 }
 
@@ -27,10 +29,29 @@ export interface Designation {
   address: string;
   shift_in: string;
   shift_out: string;
+  day_start: number;
+  day_end: number;
   date_assigned: string;
   date_of_dismissal: string | null;
   status: string;
   note: string | null;
+}
+
+export interface Firearm {
+  id: number;
+  type: string;
+  serial_num: string;
+  exp_of_registration: string;
+}
+
+export interface FirearmIssuance {
+  id: number;
+  user_id: number;
+  firearm_id: number;
+  date_of_issuance: string;
+  turn_in_date: string | null;
+  note: string | null;
+  firearm?: Firearm;
 }
 
 export interface Attendance {
@@ -40,12 +61,16 @@ export interface Attendance {
   time_out: string | null;
   hours_worked: number | null;
   status: string;
+  statuses?: string[];
   note: string | null;
 }
 
 export interface GuardProfile {
   user: User;
   designation: Designation | null;
+  designationHistory: Designation[];
+  currentFirearm: FirearmIssuance | null;
+  firearmHistory: FirearmIssuance[];
   latestAttendance: Attendance | null;
 }
 
@@ -100,13 +125,19 @@ export const authService = {
     return response.data;
   },
 
-  timeIn: async (designationId: number): Promise<Attendance> => {
-    const response = await api.post('/mobile/time-in', { designation_id: designationId });
+  timeIn: async (designationId: number, timestamp?: string): Promise<Attendance> => {
+    const response = await api.post('/mobile/time-in', { 
+      designation_id: designationId,
+      timestamp 
+    });
     return response.data;
   },
 
-  timeOut: async (attendanceId: number): Promise<Attendance> => {
-    const response = await api.post('/mobile/time-out', { attendance_id: attendanceId });
+  timeOut: async (attendanceId: number, timestamp?: string): Promise<Attendance> => {
+    const response = await api.post('/mobile/time-out', { 
+      attendance_id: attendanceId,
+      timestamp 
+    });
     return response.data;
   },
 };

@@ -47,9 +47,9 @@ export const syncService = {
     for (const action of actions) {
       try {
         if (action.type === 'time_in') {
-          await authService.timeIn(action.payload.designation_id);
+          await authService.timeIn(action.payload.designation_id, action.createdAt);
         } else if (action.type === 'time_out') {
-          await authService.timeOut(action.payload.attendance_id);
+          await authService.timeOut(action.payload.attendance_id, action.createdAt);
         }
         // Successfully synced, don't add to remaining
       } catch {

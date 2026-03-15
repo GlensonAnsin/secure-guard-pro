@@ -65,7 +65,7 @@ class DashboardService {
           attributes: [
             [Sequelize.literal("COUNT(CASE WHEN is_present = 1 THEN 1 END)"), "present"],
             [Sequelize.literal("COUNT(CASE WHEN is_late = 1 THEN 1 END)"), "late"],
-            [Sequelize.literal("COUNT(CASE WHEN is_present = 0 AND is_on_leave = 0 AND time_out IS NOT NULL THEN 1 END)"), "absent"],
+            [Sequelize.literal("COUNT(CASE WHEN is_present = 0 AND (note IS NULL OR note != 'On Leave') AND time_out IS NOT NULL THEN 1 END)"), "absent"],
           ],
           raw: true,
         });

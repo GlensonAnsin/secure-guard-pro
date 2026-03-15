@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 import { authService, Attendance } from '../services/auth';
 import { AppColors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '../constants/theme';
-import { IdCard, User, Phone, Mail, MapPin, Calendar, Building2, Clock, FileText, LogOut, ChevronLeft } from 'lucide-react-native';
+import { IdCard, User, Phone, Mail, MapPin, Calendar, Building2, Clock, FileText, LogOut, ChevronLeft, Shield } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const { user, profile, logout } = useAuth();
@@ -78,6 +78,12 @@ export default function ProfileScreen() {
     });
   };
 
+  const getDayName = (day: number | undefined): string => {
+    if (day === undefined || day === null) return 'N/A';
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[day] || 'N/A';
+  };
+
   const formatShiftTime = (timeStr: string | undefined): string => {
     if (!timeStr) return '--:--';
     const parts = timeStr.split(':');
@@ -88,8 +94,10 @@ export default function ProfileScreen() {
     return `${hours}:${minutes} ${ampm}`;
   };
 
-  const fullName = user
-    ? `${user.first_name}${user.middle_name ? ` ${user.middle_name}` : ''} ${user.last_name}${user.suffix ? ` ${user.suffix}` : ''}`
+  const displayUser = profile?.user || user;
+
+  const fullName = displayUser
+    ? `${displayUser.first_name}${displayUser.middle_name ? ` ${displayUser.middle_name}` : ''} ${displayUser.last_name}${displayUser.suffix ? ` ${displayUser.suffix}` : ''}`
     : 'Guard';
 
   const fullAddress = user
@@ -102,13 +110,20 @@ export default function ProfileScreen() {
     switch (status?.toLowerCase()) {
       case 'active':
       case 'assigned':
+      case 'present':
       case 'completed':
         return AppColors.success;
       case 'resigned':
       case 'dismissed':
+      case 'absent':
         return AppColors.danger;
       case 'on_leave':
+      case 'late':
+      case 'early_out':
         return AppColors.warning;
+      case 'early_in':
+      case 'on_duty':
+        return AppColors.info || '#3b82f6';
       default:
         return AppColors.textMuted;
     }
@@ -140,10 +155,10 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <Text style={styles.profileName}>{fullName}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(user?.status)}20` }]}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(user?.status) }]} />
-            <Text style={[styles.statusText, { color: getStatusColor(user?.status) }]}>
-              {user?.status === 'assigned' ? 'Assigned' : user?.status === 'unassigned' ? 'Unassigned' : user?.status === 'on_leave' ? 'On Leave' : user?.status === 'resigned' ? 'Resigned' : user?.status}
+          <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(displayUser?.status)}20` }]}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(displayUser?.status) }]} />
+            <Text style={[styles.statusText, { color: getStatusColor(displayUser?.status) }]}>
+              {displayUser?.status === 'assigned' ? 'Assigned' : displayUser?.status === 'unassigned' ? 'Unassigned' : displayUser?.status === 'on_leave' ? 'On Leave' : displayUser?.status === 'resigned' ? 'Resigned' : displayUser?.status ? (displayUser.status.charAt(0).toUpperCase() + displayUser.status.slice(1)) : 'N/A'}
             </Text>
           </View>
         </View>
@@ -184,12 +199,18 @@ export default function ProfileScreen() {
               value={`${formatShiftTime(profile.designation.shift_in)} — ${formatShiftTime(profile.designation.shift_out)}`}
             />
             <InfoDivider />
+            <InfoRow
+              icon={Calendar}
+              label="Work Days"
+              value={`${getDayName(profile.designation.day_start)} to ${getDayName(profile.designation.day_end)}`}
+            />
+            <InfoDivider />
             <InfoRow icon={Calendar} label="Date Assigned" value={formatDate(profile.designation.date_assigned)} />
             <InfoDivider />
             <InfoRow
               icon={FileText}
               label="Assignment Status"
-              value={profile.designation.status?.charAt(0).toUpperCase() + profile.designation.status?.slice(1)}
+              value={profile.designation.status ? (profile.designation.status.charAt(0).toUpperCase() + profile.designation.status.slice(1)) : 'N/A'}
               valueColor={getStatusColor(profile.designation.status)}
             />
           </View>
@@ -199,6 +220,79 @@ export default function ProfileScreen() {
             <Text style={styles.noDataText}>No Active Assignment</Text>
           </View>
         )}
+
+        {/* Current Issued Firearm */}
+        <Text style={styles.sectionTitle}>Current Issued Firearm</Text>
+        {profile?.currentFirearm ? (
+          <View style={styles.card}>
+            <InfoRow icon={Shield} label="Firearm Type" value={profile.currentFirearm.firearm?.type || 'N/A'} />
+            <InfoDivider />
+            <InfoRow icon={FileText} label="Serial Number" value={profile.currentFirearm.firearm?.serial_num || 'N/A'} />
+            <InfoDivider />
+            <InfoRow icon={Calendar} label="Issued Date" value={formatDate(profile.currentFirearm.date_of_issuance)} />
+          </View>
+        ) : (
+          <View style={styles.noDataCard}>
+            <Shield size={32} color={AppColors.textMuted} style={{ marginBottom: Spacing.md }} />
+            <Text style={styles.noDataText}>No Issued Firearm</Text>
+          </View>
+        )}
+
+        {/* Designation History */}
+        <Text style={styles.sectionTitle}>Designation History</Text>
+        <View style={styles.card}>
+          {profile?.designationHistory && profile.designationHistory.length > 0 ? (
+            profile.designationHistory.map((des, index) => (
+              <View key={des.id}>
+                <View style={{ marginVertical: Spacing.sm }}>
+                  <Text style={{ fontSize: FontSizes.md, fontWeight: FontWeights.bold, color: AppColors.textPrimary }}>
+                    {des.client}
+                  </Text>
+                  <Text style={{ fontSize: FontSizes.sm, color: AppColors.textSecondary, marginTop: 2 }}>
+                    {formatDate(des.date_assigned)} {des.date_of_dismissal ? ` - ${formatDate(des.date_of_dismissal)}` : '(Current)'}
+                  </Text>
+                  <Text style={{ fontSize: FontSizes.xs, color: AppColors.textMuted, marginTop: 2 }}>
+                    {des.address}
+                  </Text>
+                </View>
+                {index < profile.designationHistory.length - 1 && <InfoDivider />}
+              </View>
+            ))
+          ) : (
+            <View style={{ padding: Spacing.md, alignItems: 'center' }}>
+              <Text style={styles.noDataText}>No history found</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Firearm Issuance History */}
+        <Text style={styles.sectionTitle}>Firearm Issuance History</Text>
+        <View style={styles.card}>
+          {profile?.firearmHistory && profile.firearmHistory.length > 0 ? (
+            profile.firearmHistory.map((fi, index) => (
+              <View key={fi.id}>
+                <View style={{ marginVertical: Spacing.sm }}>
+                  <Text style={{ fontSize: FontSizes.md, fontWeight: FontWeights.bold, color: AppColors.textPrimary }}>
+                    {fi.firearm?.type} ({fi.firearm?.serial_num})
+                  </Text>
+                  <Text style={{ fontSize: FontSizes.sm, color: AppColors.textSecondary, marginTop: 2 }}>
+                    Issued: {formatDate(fi.date_of_issuance)}
+                  </Text>
+                  {fi.turn_in_date && (
+                    <Text style={{ fontSize: FontSizes.sm, color: AppColors.textMuted, marginTop: 2 }}>
+                      Returned: {formatDate(fi.turn_in_date)}
+                    </Text>
+                  )}
+                </View>
+                {index < profile.firearmHistory.length - 1 && <InfoDivider />}
+              </View>
+            ))
+          ) : (
+            <View style={{ padding: Spacing.md, alignItems: 'center' }}>
+              <Text style={styles.noDataText}>No history found</Text>
+            </View>
+          )}
+        </View>
 
         {/* Attendance History */}
         <Text style={styles.sectionTitle}>Attendance History</Text>
@@ -221,10 +315,14 @@ export default function ProfileScreen() {
                       </Text>
                     )}
                   </View>
-                  <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(attendance.status)}20`, paddingHorizontal: Spacing.sm, paddingVertical: 4 }]}>
-                    <Text style={[styles.statusText, { color: getStatusColor(attendance.status) }]}>
-                      {attendance.status.replace('_', ' ').toUpperCase()}
-                    </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, justifyContent: 'flex-end', flex: 1 }}>
+                    {(attendance.statuses && attendance.statuses.length > 0 ? attendance.statuses : [attendance.status || 'unknown']).map((s, i) => (
+                      <View key={i} style={[styles.statusBadge, { backgroundColor: `${getStatusColor(s)}20`, paddingHorizontal: Spacing.sm, paddingVertical: 4, marginLeft: 4 }]}>
+                        <Text style={[styles.statusText, { color: getStatusColor(s), fontSize: 10 }]}>
+                          {s.replace('_', ' ').toUpperCase()}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
                 {index < attendances.length - 1 && <InfoDivider />}

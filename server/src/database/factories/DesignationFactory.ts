@@ -19,7 +19,7 @@ class DesignationFactory extends Factory<Designation> {
       shift_out: faker.helpers.arrayElement(['14:00:00', '22:00:00', '06:00:00']),
       date_assigned: faker.date.past({ years: 1 }),
       date_of_dismissal: isDismissed ? faker.date.recent({ days: 90 }) : null,
-      last_shift_changes: faker.date.recent({ days: 7 }),
+      last_shift_changes: faker.date.recent({ days: 14 }),
       is_active: isActive,
       is_dismissed: isDismissed,
       is_completed: isCompleted,

@@ -99,6 +99,12 @@ class ArchiveService {
     const record = await model.findByPk(id, { paranoid: false });
     if (!record) throw new Error('Record not found');
 
+    // If deleting an attendance record, track it to prevent recreation by sync logic
+    if (entity === 'attendances') {
+      const { default: MobileService } = await import('./MobileService.js');
+      MobileService.trackPurgedAttendance((record as any).designation_id, (record as any).time_in);
+    }
+
     await record.destroy({ force: true });
     return { success: true };
   }

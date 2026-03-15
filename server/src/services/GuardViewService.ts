@@ -95,8 +95,11 @@ class GuardViewService {
 
     if (status === 'on_leave') {
       user.is_on_leave = true;
+    } else if (status === 'not_on_leave') {
+      user.is_on_leave = false;
     } else if (status === 'available') {
       user.is_on_leave = false;
+      user.is_available = true;
     } else if (status === 'resigned') {
       user.is_resigned = true;
       user.is_available = false;

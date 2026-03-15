@@ -8,15 +8,15 @@ interface AttendanceAttributes {
   hours_worked: number | null;
   is_present: boolean;
   is_late: boolean;
+  is_early_in: boolean;
   is_early_out: boolean;
-  is_on_leave: boolean;
   note: string | null;
   created_at?: Date;
   updated_at?: Date;
   deleted_at?: Date | null;
 }
 
-export interface AttendanceCreationAttributes extends Optional<AttendanceAttributes, 'id' | 'time_out' | 'hours_worked' | 'is_present' | 'is_late' | 'is_early_out' | 'is_on_leave' | 'note' | 'created_at' | 'updated_at' | 'deleted_at'> {}
+export interface AttendanceCreationAttributes extends Optional<AttendanceAttributes, 'id' | 'time_out' | 'hours_worked' | 'is_present' | 'is_late' | 'is_early_in' | 'is_early_out' | 'note' | 'created_at' | 'updated_at' | 'deleted_at'> {}
 
 class Attendance extends Model<AttendanceAttributes, AttendanceCreationAttributes> implements AttendanceAttributes {
   declare id: number;
@@ -26,8 +26,8 @@ class Attendance extends Model<AttendanceAttributes, AttendanceCreationAttribute
   declare hours_worked: number | null;
   declare is_present: boolean;
   declare is_late: boolean;
+  declare is_early_in: boolean;
   declare is_early_out: boolean;
-  declare is_on_leave: boolean;
   declare note: string | null;
   declare created_at: Date;
   declare updated_at: Date;
@@ -69,12 +69,12 @@ class Attendance extends Model<AttendanceAttributes, AttendanceCreationAttribute
           allowNull: false,
           defaultValue: false,
         },
-        is_early_out: {
+        is_early_in: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,
         },
-        is_on_leave: {
+        is_early_out: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,

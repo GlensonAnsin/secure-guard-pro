@@ -43,12 +43,12 @@ class CreateAttendancesTable {
         allowNull: false,
         defaultValue: false,
       },
-      is_early_out: {
+      is_early_in: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
       },
-      is_on_leave: {
+      is_early_out: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,

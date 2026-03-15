@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  UserX,
   X,
   Archive,
   Edit,
@@ -25,7 +24,7 @@ export function AttendanceList() {
   const [dutyCount, setDutyCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
   const [absentCount, setAbsentCount] = useState(0);
-  const [onLeaveCount, setOnLeaveCount] = useState(0);
+  const [earlyInCount, setEarlyInCount] = useState(0);
   const [halfDayCount, setHalfDayCount] = useState(0);
 
   const stats = [
@@ -40,11 +39,11 @@ export function AttendanceList() {
     { name: 'Late', value: lateCount, icon: Clock, key: 'late', color: 'amber' },
     { name: 'Absent', value: absentCount, icon: XCircle, key: 'absent', color: 'red' },
     {
-      name: 'On Leave',
-      value: onLeaveCount,
-      icon: UserX,
-      key: 'on_leave',
-      color: 'yellow',
+      name: 'Early In',
+      value: earlyInCount,
+      icon: Clock,
+      key: 'early_in',
+      color: 'blue',
     },
     {
       name: 'Early Out',
@@ -90,7 +89,7 @@ export function AttendanceList() {
         setDutyCount(s.duty || 0);
         setLateCount(s.late || 0);
         setAbsentCount(s.absent || 0);
-        setOnLeaveCount(s.on_leave || 0);
+        setEarlyInCount(s.early_in || 0);
         setHalfDayCount(s.early_out || 0);
       }
     } catch (error) {
@@ -264,7 +263,7 @@ export function AttendanceList() {
                 <option value="all">All Statuses</option>
                 <option value="on_duty">On Duty</option>
                 <option value="present">Present</option>
-                <option value="on_leave">On Leave</option>
+                <option value="early_in">Early In</option>
                 <option value="early_out">Early Out</option>
                 <option value="late">Late</option>
                 <option value="absent">Absent</option>
@@ -342,7 +341,7 @@ export function AttendanceList() {
                         {formatTime(record.designation.shift_in) + ' - ' + formatTime(record.designation.shift_out) ||
                           'N/A'}
                       </div>
-                      <div className="text-slate-500">{record.designation.address}</div>
+                      <div className="text-slate-500">{record.designation.company?.name || 'Unknown Location'}</div>
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-700 font-medium">
                       {record.time_in
@@ -357,11 +356,11 @@ export function AttendanceList() {
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-slate-500">{record.hours_worked || '-'}</td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm">
                       <div className="flex flex-wrap gap-1">
-                        {record.is_on_leave ? (
+                        {record.note === 'On Leave' ? (
                           <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
                             On Leave
                           </span>
-                        ) : record.time_in ? (
+                        ) : record.time_in && record.is_present ? (
                           <>
                             <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
                               {!record.time_out ? 'On Duty' : 'Present'}
@@ -371,15 +370,28 @@ export function AttendanceList() {
                                 Late
                               </span>
                             )}
+                            {record.is_early_in && (
+                              <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                Early In
+                              </span>
+                            )}
                             {record.is_early_out && (
                               <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
                                 Early Out
                               </span>
                             )}
                           </>
-                        ) : (
+                        ) : !record.is_present && record.time_out !== null ? (
                           <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
                             Absent
+                          </span>
+                        ) : record.time_in && !record.time_out ? (
+                          <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                            On Duty
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-600/10">
+                            Pending
                           </span>
                         )}
                       </div>

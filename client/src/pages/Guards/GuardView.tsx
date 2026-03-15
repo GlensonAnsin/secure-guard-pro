@@ -53,7 +53,7 @@ export function GuardView() {
 
   const handleToggleLeave = async () => {
     if (!id || isUpdatingStatus) return;
-    const newStatus = guard.is_on_leave ? 'available' : 'on_leave';
+    const newStatus = guard.is_on_leave ? 'not_on_leave' : 'on_leave';
     setIsUpdatingStatus(true);
     try {
       const res = await guardViewService.updateStatus(parseInt(id), newStatus);
@@ -103,7 +103,7 @@ export function GuardView() {
     );
   }
 
-  const fullName = `${guard.first_name || ''} ${guard.last_name || ''}`.trim();
+  const fullName = `${guard.first_name || ''} ${guard.middle_name || ''} ${guard.last_name || ''}`.trim();
   const initials = `${guard.first_name?.[0] || ''}${guard.last_name?.[0] || ''}`;
 
   const formatTime = (timeString: string) => {
@@ -219,7 +219,7 @@ export function GuardView() {
               )}
               {guard.statuses?.includes('resigned') && (
                 <p className="text-xs text-center text-red-500 font-medium py-2 bg-red-50 rounded-md border border-red-100">
-                  Guard has archived status.
+                  Guard has resigned.
                 </p>
               )}
             </div>

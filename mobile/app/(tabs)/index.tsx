@@ -90,9 +90,18 @@ export default function HomeScreen() {
 
     // Handle overnight shifts
     if (shiftInH > shiftOutH || (shiftInH === shiftOutH && shiftInM > shiftOutM)) {
-      if (now.getHours() < shiftInH) { // E.g., it is 2 AM right now, the shift started yesterday
-        start.setDate(start.getDate() - 1);
-      } else { // It is 10 PM right now, the shift ends tomorrow
+      if (now.getHours() < shiftInH) { // We are before the numerical shift_in hour
+        // Check if we are close to the shift start (Early In window, e.g., within 4 hours)
+        const diffHours = (shiftInDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+        
+        if (diffHours > 4) {
+          // Far from start, we are likely in the tail end of the shift that started yesterday
+          start.setDate(start.getDate() - 1);
+        } else {
+          // Within early-in window, the shift starts today and ends tomorrow
+          end.setDate(end.getDate() + 1);
+        }
+      } else { // It is 10 PM right now for a 10 PM shift, the shift ends tomorrow
         end.setDate(end.getDate() + 1);
       }
     }
@@ -102,15 +111,27 @@ export default function HomeScreen() {
 
   const shiftBoundaries = getShiftBoundaries();
 
-  const isWithinShift = (): boolean => {
-    if (!shiftBoundaries) return false;
-    return currentTime >= shiftBoundaries.start && currentTime <= shiftBoundaries.end;
+  const isWorkingDay = (): boolean => {
+    if (!profile?.designation) return false;
+    const { day_start, day_end } = profile.designation;
+    const today = currentTime.getDay();
+    
+    if (day_start <= day_end) {
+      return today >= day_start && today <= day_end;
+    } else {
+      return today >= day_start || today <= day_end;
+    }
   };
 
   const hasTimedInThisShift = useCallback(() => {
     if (!shiftBoundaries || !profile?.latestAttendance) return false;
     const timeIn = new Date(profile.latestAttendance.time_in);
-    return timeIn >= shiftBoundaries.start && timeIn <= shiftBoundaries.end;
+    
+    // Add a 4-hour buffer for "Early In" clock-ins
+    const bufferStart = new Date(shiftBoundaries.start);
+    bufferStart.setHours(bufferStart.getHours() - 4);
+    
+    return timeIn >= bufferStart && timeIn <= shiftBoundaries.end;
   }, [shiftBoundaries, profile?.latestAttendance]);
 
   const evaluatedActiveAttendance = profile?.latestAttendance && !profile.latestAttendance.time_out && hasTimedInThisShift() 
@@ -123,12 +144,12 @@ export default function HomeScreen() {
 
   const alreadyCompletedShift = profile?.latestAttendance && !!profile.latestAttendance.time_out && hasTimedInThisShift();
   
-  const isOnLeave = profile?.user?.status === 'on_leave';
+  const isOnLeave = profile?.user?.is_on_leave;
   
   // Guard is absent if the shift has ended and they never timed in
   const isAbsent = !activeAttendance && !alreadyCompletedShift && shiftBoundaries && currentTime > shiftBoundaries.end;
 
-  const canTimeIn = !activeAttendance && !alreadyCompletedShift && !isOnLeave && !isAbsent && profile?.designation && isWithinShift();
+  const canTimeIn = !activeAttendance && !alreadyCompletedShift && !isOnLeave && !isAbsent && profile?.designation && isWorkingDay();
 
   const handleTimeIn = async () => {
     if (!profile?.designation || isOnLeave) return;
@@ -200,8 +221,31 @@ export default function HomeScreen() {
     );
   };
 
+  const getStatusColor = (status: string | undefined) => {
+    switch (status?.toLowerCase()) {
+      case 'active':
+      case 'assigned':
+      case 'present':
+      case 'completed':
+        return AppColors.success;
+      case 'resigned':
+      case 'dismissed':
+      case 'absent':
+        return AppColors.danger;
+      case 'on_leave':
+      case 'late':
+      case 'early_out':
+        return AppColors.warning;
+      case 'early_in':
+      case 'on_duty':
+        return AppColors.info || '#3b82f6';
+      default:
+        return AppColors.textMuted;
+    }
+  };
+
   const guardName = user
-    ? `${user.first_name}${user.middle_name ? ` ${user.middle_name.charAt(0)}.` : ''} ${user.last_name}${user.suffix ? ` ${user.suffix}` : ''}`
+    ? `${user.first_name} ${user.last_name}${user.suffix ? ` ${user.suffix}` : ''}`
     : 'Guard';
 
   return (
@@ -313,10 +357,18 @@ export default function HomeScreen() {
           {activeAttendance ? (
             <>
               <View style={styles.timedInInfo}>
-                <Text style={styles.timedInLabel}>Timed In At</Text>
                 <Text style={styles.timedInTime}>
                   {formatTime(new Date(activeAttendance.time_in))}
                 </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: Spacing.sm, justifyContent: 'center' }}>
+                  {(activeAttendance.statuses && activeAttendance.statuses.length > 0 ? activeAttendance.statuses : [activeAttendance.status || 'unknown']).map((s, i) => (
+                    <View key={i} style={[styles.statusBadge, { backgroundColor: `${getStatusColor(s)}20` }]}>
+                      <Text style={[styles.statusText, { color: getStatusColor(s) }]}>
+                        {s.replace('_', ' ').toUpperCase()}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
               <TouchableOpacity
                 style={[styles.timeButton, styles.timeOutButton]}
@@ -344,6 +396,8 @@ export default function HomeScreen() {
                       ? "You are currently on leave."
                       : isAbsent
                       ? "You were marked absent for this shift."
+                      : !isWorkingDay()
+                      ? "Today is not your scheduled working day."
                       : alreadyCompletedShift
                       ? "You have already completed your shift for today."
                       : `Time In will be available at ${formatShiftTime(profile.designation.shift_in)}`}
@@ -589,6 +643,17 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.bold,
     color: AppColors.success,
+  },
+  statusBadge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    marginLeft: Spacing.sm,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: FontWeights.bold,
+    letterSpacing: 0.5,
   },
   timeButton: {
     flexDirection: 'row',

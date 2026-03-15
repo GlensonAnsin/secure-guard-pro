@@ -42,13 +42,13 @@ class MobileController {
    */
   public async timeIn(req: Request, res: Response, next: NextFunction) {
     try {
-      const { designation_id } = req.body;
+      const { designation_id, timestamp } = req.body;
 
       if (!designation_id) {
         return ApiResponse.error(res, 'Designation ID is required', 400);
       }
 
-      const attendance = await MobileService.timeIn(designation_id);
+      const attendance = await MobileService.timeIn(designation_id, timestamp);
       return ApiResponse.success(res, attendance, 'Timed in successfully', 201);
     } catch (error: any) {
       return ApiResponse.error(res, error.message, 400);
@@ -60,13 +60,13 @@ class MobileController {
    */
   public async timeOut(req: Request, res: Response, next: NextFunction) {
     try {
-      const { attendance_id } = req.body;
+      const { attendance_id, timestamp } = req.body;
 
       if (!attendance_id) {
         return ApiResponse.error(res, 'Attendance ID is required', 400);
       }
 
-      const attendance = await MobileService.timeOut(attendance_id);
+      const attendance = await MobileService.timeOut(attendance_id, timestamp);
       return ApiResponse.success(res, attendance, 'Timed out successfully');
     } catch (error: any) {
       return ApiResponse.error(res, error.message, 400);
