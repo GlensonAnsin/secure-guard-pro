@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import CompanyService from '../services/CompanyService.js';
 import ApiResponse from '../utils/ApiResponse.js';
+import CompanyRequest from '../requests/CompanyRequest.js';
 
 class CompanyController {
   public async index(req: Request, res: Response, next: NextFunction) {
@@ -28,7 +29,8 @@ class CompanyController {
 
   public async store(req: Request, res: Response, next: NextFunction) {
     try {
-      const company = await CompanyService.createCompany(req.body);
+      const validated = CompanyRequest.store.parse(req.body);
+      const company = await CompanyService.createCompany(validated);
       return ApiResponse.success(res, company, 'Company created successfully', 201);
     } catch (error) {
       next(error);
@@ -37,7 +39,8 @@ class CompanyController {
 
   public async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const company = await CompanyService.updateCompany(Number(req.params.id), req.body);
+      const validated = CompanyRequest.update.parse(req.body);
+      const company = await CompanyService.updateCompany(Number(req.params.id), validated);
       return ApiResponse.success(res, company, 'Company updated successfully');
     } catch (error) {
       next(error);

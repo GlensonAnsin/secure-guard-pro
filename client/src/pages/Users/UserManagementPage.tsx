@@ -536,6 +536,8 @@ export function UserManagementPage() {
                     className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                     placeholder="John"
                     required
+                    pattern="^[A-Za-z\s]+$"
+                    title="First name must contain only letters and spaces"
                   />
                 </div>
                 <div className="space-y-2">
@@ -546,9 +548,8 @@ export function UserManagementPage() {
                     onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
                     className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                     placeholder="Quincy"
-                    minLength={2}
-                    pattern="^[a-zA-Z]{2,}$"
-                    title="Middle name must be at least 2 characters and no initials."
+                    pattern="^[A-Za-z\s]+$"
+                    title="Middle name must contain only letters and spaces"
                   />
                 </div>
                 <div className="space-y-2">
@@ -562,6 +563,8 @@ export function UserManagementPage() {
                     className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
                     placeholder="Doe"
                     required
+                    pattern="^[A-Za-z\s]+$"
+                    title="Last name must contain only letters and spaces"
                   />
                 </div>
 

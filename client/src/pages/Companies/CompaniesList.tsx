@@ -381,6 +381,8 @@ export function CompaniesList() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    pattern="^[A-Za-z\s&.]+$"
+                    title="Company name must contain only letters and common punctuation"
                     className="block w-full rounded-md border-0 py-1.5 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white px-2"
                     placeholder="e.g., Limketkai Center"
                   />
