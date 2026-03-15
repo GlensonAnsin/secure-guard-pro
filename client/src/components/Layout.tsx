@@ -8,7 +8,7 @@ export function Layout() {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-      <main className="flex-1 relative z-0 flex flex-col overflow-y-auto focus:outline-none">
+      <main className="flex-1 relative flex flex-col overflow-y-auto focus:outline-none">
         {/* Mobile top bar */}
         <div className="md:hidden sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between bg-slate-900 px-4 border-b border-black/10">
           <button

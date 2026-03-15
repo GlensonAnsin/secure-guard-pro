@@ -493,9 +493,9 @@ export function UserManagementPage() {
 
       {/* Modal Overlay */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowForm(false)} />
-          <div className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 animate-in fade-in zoom-in duration-200">
+          <div className="relative w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 animate-in fade-in zoom-in duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/50 px-6 py-4">
               <div className="flex items-center gap-3">
@@ -516,242 +516,243 @@ export function UserManagementPage() {
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-3">
-                  <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4">
-                    <Contact className="h-4 w-4 text-blue-500" />
-                    Personal Information
-                  </h3>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    First Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                    placeholder="John"
-                    required
-                    pattern="^[A-Za-z\s]+$"
-                    title="First name must contain only letters and spaces"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Middle Name</label>
-                  <input
-                    type="text"
-                    value={formData.middle_name}
-                    onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                    placeholder="Quincy"
-                    pattern="^[A-Za-z\s]+$"
-                    title="Middle name must contain only letters and spaces"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                    placeholder="Doe"
-                    required
-                    pattern="^[A-Za-z\s]+$"
-                    title="Last name must contain only letters and spaces"
-                  />
-                </div>
-
-                <div className="md:col-span-3">
-                  <div className="h-px bg-slate-100 my-2" />
-                  <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4">
-                    <Shield className="h-4 w-4 text-blue-500" />
-                    Account Configuration
-                  </h3>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-3">
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4">
+                      <Contact className="h-4 w-4 text-blue-500" />
+                      Personal Information
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                      placeholder="john.doe@example.com"
+                      type="text"
+                      value={formData.first_name}
+                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                      placeholder="John"
+                      required
+                      pattern="^[A-Za-z\s]+$"
+                      title="First name must contain only letters and spaces"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Middle Name</label>
+                    <input
+                      type="text"
+                      value={formData.middle_name}
+                      onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                      placeholder="Quincy"
+                      pattern="^[A-Za-z\s]+$"
+                      title="Middle name must contain only letters and spaces"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.last_name}
+                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                      placeholder="Doe"
+                      required
+                      pattern="^[A-Za-z\s]+$"
+                      title="Last name must contain only letters and spaces"
+                    />
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <div className="h-px bg-slate-100 my-2" />
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4">
+                      <Shield className="h-4 w-4 text-blue-500" />
+                      Account Configuration
+                    </h3>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                        placeholder="john.doe@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Username <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                      placeholder="jdoe2024"
                       required
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Username <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                    placeholder="jdoe2024"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">System Role</label>
-                  <select
-                    value={formData.role_slug}
-                    onChange={(e) => setFormData({ ...formData, role_slug: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all appearance-none bg-slate-50/50 px-2"
-                  >
-                    <option value="admin">Administrator</option>
-                    <option value="hr">Human Resources</option>
-                  </select>
-                </div>
-
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    {editingUser ? 'New Password (Leave empty to keep current)' : 'Account Password'}
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                      placeholder="••••••••"
-                      {...(!editingUser ? { required: true } : {})}
-                    />
-                  </div>
-                  <div className="mt-2 flex items-center">
-                    <input
-                      id="show-password"
-                      type="checkbox"
-                      checked={showPassword}
-                      onChange={(e) => setShowPassword(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
-                    />
-                    <label
-                      htmlFor="show-password"
-                      className="ml-2 block text-sm text-slate-900 select-none cursor-pointer"
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">System Role</label>
+                    <select
+                      value={formData.role_slug}
+                      onChange={(e) => setFormData({ ...formData, role_slug: e.target.value })}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all appearance-none bg-slate-50/50 px-2"
                     >
-                      Show Password
+                      <option value="admin">Administrator</option>
+                      <option value="hr">Human Resources</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      {editingUser ? 'New Password (Leave empty to keep current)' : 'Account Password'}
                     </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="block w-full rounded-lg border-slate-200 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                        placeholder="••••••••"
+                        {...(!editingUser ? { required: true } : {})}
+                      />
+                    </div>
+                    <div className="mt-2 flex items-center">
+                      <input
+                        id="show-password"
+                        type="checkbox"
+                        checked={showPassword}
+                        onChange={(e) => setShowPassword(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                      />
+                      <label
+                        htmlFor="show-password"
+                        className="ml-2 block text-sm text-slate-900 select-none cursor-pointer"
+                      >
+                        Show Password
+                      </label>
+                    </div>
                   </div>
-                </div>
 
-                <div className="md:col-span-3">
-                  <div className="h-px bg-slate-100 my-2" />
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-blue-500" />
-                      Permanent Address
-                    </h3>
-                    {isAddrLoading && (
-                      <div className="flex items-center gap-2 text-xs text-blue-600 animate-pulse">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Initializing address...
-                      </div>
-                    )}
+                  <div className="md:col-span-3">
+                    <div className="h-px bg-slate-100 my-2" />
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-blue-500" />
+                        Permanent Address
+                      </h3>
+                      {isAddrLoading && (
+                        <div className="flex items-center gap-2 text-xs text-blue-600 animate-pulse">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Initializing address...
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Region <span className="text-red-500">*</span></label>
-                  <select
-                    required
-                    value={selectedRegionCode}
-                    onChange={handleRegionChange}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                  >
-                    <option value="">Select Region</option>
-                    {regions.map((r) => (
-                      <option key={r.code} value={r.code}>{r.name}</option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Region <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={selectedRegionCode}
+                      onChange={handleRegionChange}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                    >
+                      <option value="">Select Region</option>
+                      {regions.map((r) => (
+                        <option key={r.code} value={r.code}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="space-y-2">
-                   <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Province <span className="text-red-500">*</span></label>
-                  <select
-                    required
-                    value={selectedProvinceCode}
-                    onChange={handleProvinceChange}
-                    disabled={!selectedRegionCode}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
-                  >
-                    <option value="">Select Province</option>
-                    {provinces.map((p) => (
-                      <option key={p.code} value={p.code}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Province <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={selectedProvinceCode}
+                      onChange={handleProvinceChange}
+                      disabled={!selectedRegionCode}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
+                    >
+                      <option value="">Select Province</option>
+                      {provinces.map((p) => (
+                        <option key={p.code} value={p.code}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">City / Municipality <span className="text-red-500">*</span></label>
-                  <select
-                    required
-                    value={selectedCityCode}
-                    onChange={handleCityChange}
-                    disabled={!selectedProvinceCode}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
-                  >
-                    <option value="">Select City / Municipality</option>
-                    {cities.map((c) => (
-                      <option key={c.code} value={c.code}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">City / Municipality <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={selectedCityCode}
+                      onChange={handleCityChange}
+                      disabled={!selectedProvinceCode}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
+                    >
+                      <option value="">Select City / Municipality</option>
+                      {cities.map((c) => (
+                        <option key={c.code} value={c.code}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Barangay <span className="text-red-500">*</span></label>
-                  <select
-                    required
-                    value={selectedBarangayCode}
-                    onChange={handleBarangayChange}
-                    disabled={!selectedCityCode}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
-                  >
-                    <option value="">Select Barangay</option>
-                    {barangays.map((b) => (
-                      <option key={b.code} value={b.code}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Barangay <span className="text-red-500">*</span></label>
+                    <select
+                      required
+                      value={selectedBarangayCode}
+                      onChange={handleBarangayChange}
+                      disabled={!selectedCityCode}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2 disabled:bg-slate-50 disabled:text-slate-400"
+                    >
+                      <option value="">Select Barangay</option>
+                      {barangays.map((b) => (
+                        <option key={b.code} value={b.code}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Street Address</label>
-                  <input
-                    type="text"
-                    value={formData.street}
-                    onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                    className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
-                    placeholder="Unit/House No., Building, Street Name"
-                  />
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Street Address</label>
+                    <input
+                      type="text"
+                      value={formData.street}
+                      onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                      className="block w-full rounded-lg border-slate-200 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 shadow-sm transition-all px-2"
+                      placeholder="Unit/House No., Building, Street Name"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Modal Actions */}
-              <div className="mt-8 flex items-center justify-end gap-3 border-t border-slate-200 pt-6">
+              <div className="mt-auto border-t border-slate-200 p-6 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-end gap-3 rounded-b-2xl">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="rounded-lg px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all active:scale-95 cursor-pointer"
+                  className="rounded-lg px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all active:scale-95 cursor-pointer w-full sm:w-auto text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95 cursor-pointer w-full sm:w-auto"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   {editingUser ? 'Update Profile' : 'Create User'}
