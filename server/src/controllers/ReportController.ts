@@ -105,7 +105,8 @@ class ReportController {
         }));
 
         const csv = ReportService.generateCSV(flatData, [
-          { key: 'company_id', header: 'Company ID' },
+          { key: 'id', header: 'ID' },
+          { key: 'name', header: 'Company Name' },
           { key: 'address', header: 'Address' },
           { key: 'is_active', header: 'Active' },
           { key: 'total_guards', header: 'Total Guards' },

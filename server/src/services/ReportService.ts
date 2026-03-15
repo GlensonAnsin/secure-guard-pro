@@ -23,9 +23,19 @@ class ReportService {
     })).map((ur: any) => ur.user_id);
 
     if (guardUserIds.length === 0) return [];
-
+    
+    const where: any = { id: { [Op.in]: guardUserIds } };
+    if (dateFrom && dateTo) {
+      where.date_hired = {
+        [Op.gte]: dateFrom,
+        [Op.lte]: dateTo
+      };
+    } else if (dateFrom) {
+      where.date_hired = { [Op.gte]: dateFrom };
+    }
+    
     const guards = await User.findAll({
-      where: { id: { [Op.in]: guardUserIds } },
+      where,
       attributes: { exclude: ['password'] },
       include: [
         {
@@ -194,7 +204,8 @@ class ReportService {
     return companies.map((c: any) => {
       const activeDesignations = c.designations?.filter((d: any) => d.is_active) || [];
       return {
-        company_id: c.id,
+        id: c.id,
+        name: c.name,
         address: c.address,
         is_active: c.is_active,
         total_guards: activeDesignations.length,
