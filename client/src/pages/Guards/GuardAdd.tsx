@@ -321,8 +321,9 @@ export function GuardAdd() {
                     id="cel_num"
                     value={formData.cel_num}
                     onChange={handleChange}
-                    pattern="^\d+$"
-                    title="Contact number must contain only numbers"
+                    maxLength={11}
+                    pattern="\d{11}"
+                    title="Contact number must be exactly 11 digits."
                     className="block w-full rounded-md border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 px-2"
                   />
                 </div>
